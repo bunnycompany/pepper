@@ -1,8 +1,8 @@
 import http from 'node:http';
-import { existsSync, statSync, createReadStream } from 'node:fs';
-import { join, normalize, extname } from 'node:path';
+import { existsSync, statSync, createReadStream, readFileSync } from 'node:fs';
+import { join, normalize, extname, dirname } from 'node:path';
 import { createRequire } from 'node:module';
-import { loadConfig, paths, VERSION, ensureHome } from './config.js';
+import { loadConfig, paths, VERSION, ensureHome, PKG_ROOT } from './config.js';
 import { log } from './log.js';
 import * as store from './store.js';
 
@@ -23,17 +23,35 @@ const MIME = {
   '.woff2': 'font/woff2',
 };
 
-export function vendorRoots() {
-  const threeRoot = join(require_.resolve('three/package.json'), '..');
-  let vrmModule = null;
+// Exports maps in three/@pixiv/three-vrm block require.resolve('<pkg>/package.json'),
+// so locate package roots by directory instead: the normal install layout first,
+// then a walk up from the resolved entry file (hoisted/npx layouts).
+function findPkgRoot(name) {
+  const local = join(PKG_ROOT, 'node_modules', name);
+  if (existsSync(join(local, 'package.json'))) return local;
   try {
-    vrmModule = join(require_.resolve('@pixiv/three-vrm/package.json'), '..', 'lib', 'three-vrm.module.js');
-    if (!existsSync(vrmModule)) vrmModule = null;
-  } catch { vrmModule = null; }
+    let dir = dirname(require_.resolve(name));
+    while (dir !== dirname(dir)) {
+      const pj = join(dir, 'package.json');
+      if (existsSync(pj)) {
+        try {
+          if (JSON.parse(readFileSync(pj, 'utf8')).name === name) return dir;
+        } catch {}
+      }
+      dir = dirname(dir);
+    }
+  } catch {}
+  return null;
+}
+
+export function vendorRoots() {
+  const threeRoot = findPkgRoot('three');
+  const vrmRoot = findPkgRoot('@pixiv/three-vrm');
+  const vrmModule = vrmRoot ? join(vrmRoot, 'lib', 'three-vrm.module.js') : null;
   return {
-    threeModule: join(threeRoot, 'build', 'three.module.js'),
-    jsmRoot: join(threeRoot, 'examples', 'jsm'),
-    vrmModule,
+    threeModule: threeRoot ? join(threeRoot, 'build', 'three.module.js') : null,
+    jsmRoot: threeRoot ? join(threeRoot, 'examples', 'jsm') : null,
+    vrmModule: vrmModule && existsSync(vrmModule) ? vrmModule : null,
   };
 }
 
@@ -250,7 +268,7 @@ export function createPepperServer(opts = {}) {
       if (p.startsWith('/vendor/jsm/')) {
         const rel = normalize(p.slice('/vendor/jsm/'.length));
         if (rel.startsWith('..')) { res.writeHead(403); return res.end(); }
-        return serveFile(res, join(vendors.jsmRoot, rel), 'public, max-age=86400');
+        return serveFile(res, vendors.jsmRoot ? join(vendors.jsmRoot, rel) : null, 'public, max-age=86400');
       }
 
       let rel = p === '/' ? 'index.html' : normalize(decodeURIComponent(p).slice(1));

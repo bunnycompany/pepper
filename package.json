@@ -20,7 +20,7 @@
   },
   "scripts": {
     "start": "node bin/pepper.js start",
-    "test": "node --test test/"
+    "test": "node --test"
   },
   "dependencies": {
     "@pixiv/three-vrm": "^3.1.0",

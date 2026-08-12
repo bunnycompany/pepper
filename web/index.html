@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>MNN — Model News Network</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js",
+      "three/addons/": "./vendor/jsm/",
+      "@pixiv/three-vrm": "./vendor/three-vrm.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div id="bug">
+    <div class="bug-logo">MNN</div>
+    <div class="bug-glass">
+      <span id="live-pill" class="pill live"><span class="dot"></span><span class="pill-text">LIVE</span></span>
+      <span id="clock">--:--</span>
+    </div>
+  </div>
+
+  <div id="status-row">
+    <div id="status-pill">
+      <span id="brain-mode">…</span>
+      <span class="sep">·</span>
+      <span id="sweep-status">tuning in…</span>
+    </div>
+    <button id="panel-toggle" type="button" aria-label="Desk controls (p)" title="Desk controls (p)">☰</button>
+  </div>
+
+  <div id="lower-third" class="hidden">
+    <div class="kicker">MNN LIVE</div>
+    <div class="headline">Model News Network</div>
+    <div class="line"><span class="line-text"></span></div>
+  </div>
+
+  <div id="ticker">
+    <div class="ticker-label">MNN WIRE</div>
+    <div class="ticker-viewport">
+      <div class="ticker-track"></div>
+    </div>
+  </div>
+
+  <aside id="panel" aria-label="Desk controls">
+    <div class="panel-head">
+      <span class="panel-mark">MNN</span>
+      <span class="panel-title">Desk Controls</span>
+      <button id="panel-close" type="button" aria-label="Close panel">✕</button>
+    </div>
+
+    <section class="panel-section studio-only" id="sec-topics">
+      <h3>Beats</h3>
+      <ul id="topic-list"></ul>
+      <form id="topic-form" autocomplete="off">
+        <input id="topic-input" type="text" placeholder="Track a new topic…" maxlength="80">
+        <button id="topic-add" type="submit">ADD</button>
+      </form>
+    </section>
+
+    <section class="panel-section studio-only" id="sec-golive">
+      <button id="go-live" type="button">GO LIVE NOW</button>
+    </section>
+
+    <section class="panel-section" id="sec-history">
+      <h3>Bulletins</h3>
+      <ul id="history-list"></ul>
+    </section>
+
+    <section class="panel-section" id="sec-voice">
+      <h3>Voice</h3>
+      <label class="row check">
+        <input type="checkbox" id="voice-enabled">
+        <span>Read bulletins aloud</span>
+      </label>
+      <label class="row">
+        <span class="row-label">Voice</span>
+        <select id="voice-select"></select>
+      </label>
+      <label class="row">
+        <span class="row-label">Rate</span>
+        <input type="range" id="voice-rate" min="0.7" max="1.4" step="0.02" value="1.02">
+        <span id="rate-val">1.02×</span>
+      </label>
+    </section>
+
+    <section class="panel-section studio-only" id="sec-ask">
+      <h3>Ask Pepper</h3>
+      <div id="ask-log"></div>
+      <form id="ask-form" autocomplete="off">
+        <input id="ask-input" type="text" placeholder="Ask about the wire…" maxlength="400">
+        <button id="ask-send" type="submit">ASK</button>
+      </form>
+    </section>
+
+    <div class="panel-foot">G go live · M mute · P panel</div>
+  </aside>
+
+  <div id="join-gate">
+    <div class="gate-card">
+      <div class="gate-mark">MNN</div>
+      <div class="gate-net">Model News Network</div>
+      <button id="join-btn" type="button">JOIN BROADCAST ▶</button>
+      <div class="gate-hint">Joining enables Pepper’s voice · G go live · M mute · P panel</div>
+    </div>
+  </div>
+
+  <div id="toast" role="status"></div>
+
+  <script type="module" src="./newsroom.js"></script>
+  <script type="module" src="./ui.js"></script>
+</body>
+</html>
