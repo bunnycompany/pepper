@@ -730,49 +730,56 @@ function buildBuiltinPepper() {
   const hairGrp = new THREE.Group();
   hairGrp.position.set(0, 0.17, 0);
   headGrp.add(hairGrp);
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.46, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
+  // Cap stops well above eye level (phi 0.45π): the forehead and eyes must
+  // stay clear; the curtain covers the back down to the nape.
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.46, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.45), hair);
   cap.rotation.x = -0.08;
   cap.castShadow = true;
   hairGrp.add(cap);
   // SphereGeometry z = sin(phi)·sin(theta): phi in (PI, 2PI) is the back half
   const curtain = new THREE.Mesh(new THREE.SphereGeometry(0.455, 32, 14, Math.PI, Math.PI, 0, Math.PI * 0.85), hair);
   hairGrp.add(curtain);
-  const fringeXs = [-0.28, -0.15, 0, 0.15, 0.28];
+  // Bangs: small puffs tucked against the cap rim — texture, not curlers.
+  const fringeXs = [-0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3];
   for (let i = 0; i < fringeXs.length; i++) {
-    const f = new THREE.Mesh(new THREE.SphereGeometry(i % 2 ? 0.115 : 0.1, 14, 12), hair);
-    f.position.set(fringeXs[i], 0.25, 0.3);
+    const f = new THREE.Mesh(new THREE.SphereGeometry(i % 2 ? 0.07 : 0.062, 14, 12), hair);
+    f.position.set(fringeXs[i], 0.3, 0.33 - Math.abs(fringeXs[i]) * 0.28);
     hairGrp.add(f);
   }
+  // Chin-length locks hanging close along the cheeks.
   for (const side of [-1, 1]) {
-    const lock = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.2, 4, 12), hair);
-    lock.position.set(0.43 * side, -0.12, 0.04);
-    lock.rotation.z = 0.12 * side;
+    const lock = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.34, 4, 12), hair);
+    lock.position.set(0.4 * side, -0.16, 0.05);
+    lock.rotation.z = 0.05 * side;
     hairGrp.add(lock);
   }
 
-  // ahoge antenna — thin curved tube + ball tip, springs on pulseBreaking()
+  // ahoge antenna — thin curved tube + ball tip, springs on pulseBreaking();
+  // rooted in the cap shell (hair top ≈ 0.46) so it visibly grows from her.
   const ahoge = new THREE.Group();
-  ahoge.position.set(0, 0.62, -0.02);
+  ahoge.position.set(0, 0.43, -0.02);
   const curve = new THREE.CatmullRomCurve3([
-    V3(0, 0, 0), V3(0.06, 0.12, -0.02), V3(-0.02, 0.22, 0.02), V3(0.03, 0.3, 0),
+    V3(0, 0, 0), V3(0.05, 0.09, -0.015), V3(-0.015, 0.16, 0.015), V3(0.02, 0.22, 0),
   ]);
-  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.012, 6), hair);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.01, 6), hair);
   ahoge.add(tube);
-  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 10), hair);
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), hair);
   tip.position.copy(curve.getPoint(1));
   ahoge.add(tip);
   hairGrp.add(ahoge);
 
   // eyes: dark-teal flattened spheres + white specular dots; blink = scaleY
+  // Face features sit proud of the head surface (r=0.42 at the head center,
+  // which lives at headGrp y=0.17) — anything under z≈0.40 is buried skin.
   const eyes = {};
   for (const side of [-1, 1]) {
     const grp = new THREE.Group();
-    grp.position.set(0.16 * side, 0.2, 0.355);
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.08, 18, 14), eyeMat);
-    ball.scale.z = 0.5;
+    grp.position.set(0.155 * side, 0.2, 0.4);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.095, 18, 14), eyeMat);
+    ball.scale.z = 0.45;
     grp.add(ball);
-    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), white);
-    dot.position.set(0.025 * side, 0.03, 0.055);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.026, 8, 8), white);
+    dot.position.set(0.028 * side, 0.035, 0.048);
     grp.add(dot);
     headGrp.add(grp);
     eyes[side === -1 ? 'r' : 'l'] = grp;
@@ -780,8 +787,8 @@ function buildBuiltinPepper() {
 
   const brows = {};
   for (const side of [-1, 1]) {
-    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 0.02), hair);
-    brow.position.set(0.16 * side, 0.33, 0.37);
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.022, 0.02), hair);
+    brow.position.set(0.155 * side, 0.34, 0.34);
     brow.rotation.z = -0.08 * side;
     headGrp.add(brow);
     brows[side === -1 ? 'r' : 'l'] = brow;
@@ -789,8 +796,8 @@ function buildBuiltinPepper() {
 
   const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 10),
     new THREE.MeshStandardMaterial({ color: 0x8a3a34, roughness: 0.4 }));
-  mouth.position.set(0, 0.03, 0.39);
-  mouth.scale.set(1.3, 0.45, 0.4);
+  mouth.position.set(0, 0.02, 0.415);
+  mouth.scale.set(1.1, 0.45, 0.4);
   headGrp.add(mouth);
 
   const blushes = [];
@@ -801,11 +808,16 @@ function buildBuiltinPepper() {
         color: 0xff9d8a, transparent: true, opacity: 0.55, depthWrite: false, fog: false,
       }),
     );
-    blush.position.set(0.25 * side, 0.08, 0.335);
+    blush.position.set(0.26 * side, 0.06, 0.345);
     blush.rotation.y = 0.55 * side;
     headGrp.add(blush);
     blushes.push(blush);
   }
+
+  // Soft warm fill so her face reads under the studio key.
+  const faceFill = new THREE.PointLight(0xfff1e0, 2.2, 4, 2);
+  faceFill.position.set(0, 1.95, 1.5);
+  root.add(faceFill);
 
   // broadcaster earpiece with a thin mic boom to the cheek
   const ear = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), dark);

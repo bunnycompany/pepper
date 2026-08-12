@@ -738,6 +738,9 @@ async function bootStudio(st) {
   applyVoiceConfig(st.voice);
   applyStatus(st);
   renderTopics(st.topics || []);
+  // Populate the TOPIC WATCH wall immediately — playback can start before
+  // the first idle period, and the wall must never show the boot placeholder.
+  N.showIdle({ topics: (st.topics || []).filter((t) => !t.muted).map((t) => t.name) });
   setGoLiveButton();
   refreshHistory();
   refreshTicker();
