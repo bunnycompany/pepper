@@ -60,6 +60,7 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
   const out = resolve(outDir);
   const cfg = loadConfig();
   let files = 0;
+  const errors = [];
 
   console.log('');
   console.log('  🌶 ' + c.bold('pepper export') + c.dim(' → ') + out);
@@ -71,15 +72,18 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
     files += n;
     console.log('  ' + c.green('✓') + ' web/ — ' + n + ' file' + (n === 1 ? '' : 's'));
   } catch (e) {
+    errors.push('web/');
     console.log('  ' + c.red('✗') + ' web/ — ' + String(e?.message || e));
   }
 
-  // 2. vendor modules (same layout the live server exposes)
+  // 2. vendor modules (same layout the live server exposes).
+  // vendorRoots() reports a missing `three` as nulls, not a throw.
   let vendors = null;
-  try {
-    vendors = vendorRoots();
-  } catch {
+  try { vendors = vendorRoots(); } catch { vendors = null; }
+  if (!vendors?.threeModule) {
     try { vendors = fallbackVendorRoots(); } catch (e) {
+      vendors = null;
+      errors.push('vendor/');
       console.log('  ' + c.red('✗') + ' vendor/ — ' + String(e?.message || e) + c.dim(' (is `three` installed?)'));
     }
   }
@@ -87,8 +91,8 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
     const jobs = [
       ['vendor/three.module.js', vendors.threeModule],
       ['vendor/three-vrm.module.js', vendors.vrmModule],
-      ['vendor/jsm/loaders/GLTFLoader.js', join(vendors.jsmRoot, 'loaders', 'GLTFLoader.js')],
-      ['vendor/jsm/utils/BufferGeometryUtils.js', join(vendors.jsmRoot, 'utils', 'BufferGeometryUtils.js')],
+      ['vendor/jsm/loaders/GLTFLoader.js', vendors.jsmRoot ? join(vendors.jsmRoot, 'loaders', 'GLTFLoader.js') : null],
+      ['vendor/jsm/utils/BufferGeometryUtils.js', vendors.jsmRoot ? join(vendors.jsmRoot, 'utils', 'BufferGeometryUtils.js') : null],
     ];
     for (const [rel, src] of jobs) {
       try {
@@ -97,6 +101,7 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
         files++;
         console.log('  ' + c.green('✓') + ' ' + rel);
       } catch (e) {
+        errors.push(rel);
         console.log('  ' + c.red('✗') + ' ' + rel + c.dim(' — ' + String(e?.message || e)));
       }
     }
@@ -112,6 +117,7 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
       console.log('  ' + c.dim('– no avatar.vrm — the built-in Pepper will present'));
     }
   } catch (e) {
+    errors.push('avatar.vrm');
     console.log('  ' + c.red('✗') + ' avatar.vrm — ' + String(e?.message || e));
   }
 
@@ -139,10 +145,14 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
       ` — ${bulletins.length} bulletin${bulletins.length === 1 ? '' : 's'} · ${ticker.length} ticker items · ${topics.length} topic${topics.length === 1 ? '' : 's'}`,
     ));
   } catch (e) {
+    errors.push('data/broadcast.json');
     console.log('  ' + c.red('✗') + ' data/broadcast.json — ' + String(e?.message || e));
   }
 
   console.log('');
+  if (errors.length) {
+    console.log('  ' + c.red(`✗ ${errors.length} export step${errors.length === 1 ? '' : 's'} failed — do not deploy this output.`));
+  }
   console.log('  ' + c.bold(`${files} files exported.`) + ' ' + c.dim('This is broadcast mode — a static MNN station.'));
   console.log('');
   console.log('  deploy it on Cloudflare Pages:');
@@ -152,5 +162,5 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
   console.log('  ' + c.dim('MNN — all your models, all the time.'));
   console.log('');
 
-  return { outDir: out, files };
+  return { outDir: out, files, errors };
 }

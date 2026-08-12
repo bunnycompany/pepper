@@ -459,7 +459,8 @@ async function cmdAsk() {
 
 async function cmdExport() {
   const { exportSite } = await import('../src/export.js');
-  await exportSite({ outDir: typeof flags.out === 'string' ? flags.out : './pepper-site' });
+  const r = await exportSite({ outDir: typeof flags.out === 'string' ? flags.out : './pepper-site' });
+  if (r?.errors?.length) process.exitCode = 1;
 }
 
 async function cmdDaemon() {

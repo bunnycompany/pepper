@@ -33,6 +33,9 @@ const state = {
   unlocked: false,
   playing: false,
   playToken: 0,
+  booted: null,            // null until bootStudio/bootBroadcast completes
+  sseDown: false,
+  lastSeenBulletinId: null,
   queue: [],
   idleTimers: [],
   voices: [],
@@ -249,7 +252,7 @@ function utter(text) {
   });
 }
 
-async function speakLine(text) {
+async function speakLine(text, token = null) {
   if (text == null) return;
   const clean = String(text).trim();
   if (!clean) return;
@@ -260,7 +263,9 @@ async function speakLine(text) {
     if (voiced) await utter(clean);
     else await sleep(Math.max(1400, clean.length * 55));
   } finally {
-    N.setTalking(false);
+    // A superseded playback's line must not shut the mouth of the one that
+    // replaced it (cancelled utterances settle late; muted sleeps later still).
+    if (token == null || token === state.playToken) N.setTalking(false);
   }
   await sleep(180);
 }
@@ -313,13 +318,13 @@ async function playBulletin(b, { replay = false } = {}) {
       kicker: replay ? 'REPLAY · recorded ' + hhmm(b.at) : 'MNN LIVE',
       headline: state.site.title,
     });
-    await speakLine(b.open);
+    await speakLine(b.open, my);
     if (my !== state.playToken) return;
 
     for (const seg of b.segments) {
       if (my !== state.playToken) return;
       if (seg.handoff) {
-        await speakLine(seg.handoff);
+        await speakLine(seg.handoff, my);
         if (my !== state.playToken) return;
       }
       N.setMood(seg.mood);
@@ -341,7 +346,7 @@ async function playBulletin(b, { replay = false } = {}) {
       for (let j = 0; j < script.length; j++) {
         if (my !== state.playToken) return;
         if (j > 0) N.cut(SHOTS[j % SHOTS.length]);
-        await speakLine(script[j]);
+        await speakLine(script[j], my);
       }
     }
 
@@ -349,7 +354,7 @@ async function playBulletin(b, { replay = false } = {}) {
     N.setMood('steady');
     N.cut('med');
     setChyron({ kicker: 'MNN', headline: state.site.tagline || 'All your models. All the time.' });
-    await speakLine(b.signoff);
+    await speakLine(b.signoff, my);
     if (my !== state.playToken) return;
     N.gesture('shuffle');
     await sleep(700);
@@ -366,6 +371,9 @@ async function playBulletin(b, { replay = false } = {}) {
 }
 
 function afterPlayback() {
+  // History replays flip the bug to REPLAY; put the station back on its
+  // real footing once playback ends.
+  setPill(state.mode === 'broadcast' ? 'replay' : 'live');
   if (state.queue.length && state.unlocked) {
     maybePlay();
     return;
@@ -420,10 +428,24 @@ function applyStatus(d) {
   }
   if ('nextCycleAt' in d) state.nextCycleAt = d.nextCycleAt;
   if (d.brain) els.brainMode.textContent = brainLabel(d.brain);
+  // Bulletins published while the SSE stream was down only surface here:
+  // every reconnect's status push carries latestBulletinId.
+  if (state.mode === 'studio' && d.latestBulletinId
+    && d.latestBulletinId !== state.lastSeenBulletinId) {
+    state.lastSeenBulletinId = d.latestBulletinId;
+    fetchJSON('./api/bulletins/' + encodeURIComponent(d.latestBulletinId))
+      .then((b) => { enqueue(b); refreshHistory(); })
+      .catch(() => {});
+  }
 }
 
 function tickCountdown() {
   if (state.mode === 'broadcast') return;
+  if (state.sseDown) {
+    els.sweepStatus.classList.remove('shimmer');
+    els.sweepStatus.textContent = 'reconnecting…';
+    return;
+  }
   if (state.researching) {
     els.sweepStatus.textContent = state.sweepText || 'sweeping…';
     els.sweepStatus.classList.add('shimmer');
@@ -598,9 +620,16 @@ function connectSSE() {
     return scheduleReconnect();
   }
   state.es = es;
-  es.onopen = () => { state.esBackoff = 1000; };
+  es.onopen = () => { state.esBackoff = 1000; state.sseDown = false; };
   es.onerror = () => {
     closeSSE();
+    // A mid-cycle disconnect would otherwise leave researching=true forever
+    // (cycle-end can never arrive), freezing "sweeping…" and GO LIVE.
+    state.sseDown = true;
+    state.researching = false;
+    state.sweepText = '';
+    N.sweep(false);
+    setGoLiveButton();
     els.sweepStatus.classList.remove('shimmer');
     els.sweepStatus.textContent = 'reconnecting…';
     scheduleReconnect();
@@ -635,6 +664,7 @@ function connectSSE() {
 
   on('bulletin', async (d) => {
     if (!d || !d.id) return;
+    state.lastSeenBulletinId = d.id;
     try {
       const b = await fetchJSON('./api/bulletins/' + encodeURIComponent(d.id));
       enqueue(b);
@@ -713,6 +743,7 @@ async function bootStudio(st) {
   refreshTicker();
   connectSSE();
   if (st.latestBulletinId) {
+    state.lastSeenBulletinId = st.latestBulletinId;
     try {
       const b = await fetchJSON('./api/bulletins/' + encodeURIComponent(st.latestBulletinId));
       enqueue(b);
@@ -720,6 +751,9 @@ async function bootStudio(st) {
       console.warn('[ui] latest bulletin fetch failed:', e);
     }
   }
+  state.booted = 'studio';
+  // If JOIN was clicked while we were still booting, start now.
+  if (state.unlocked && !state.playing && !maybePlay()) startIdle();
 }
 
 /* ---------- boot: broadcast ---------- */
@@ -740,6 +774,16 @@ async function bootBroadcast(data) {
   const tk = data.ticker;
   renderTicker(Array.isArray(tk) ? tk : ((tk && tk.items) || []));
   renderHistory(bulletins.map(bulletinMeta));
+  // Populate the TOPIC WATCH wall before anything plays — visitors should
+  // never see the boot-time "no beats" placeholder on a public station.
+  N.showIdle({ topics: state.topics.map((t) => t.name) });
+  state.booted = 'broadcast';
+  // If JOIN was clicked while broadcast.json was still downloading, the join
+  // handler deferred to us — start the show now.
+  if (state.unlocked && !state.playing) {
+    if (newest) playBulletin(newest, { replay: true });
+    else startIdle();
+  }
 }
 
 /* ---------- mode detection ---------- */
@@ -826,6 +870,12 @@ function bindUI() {
     } catch {}
     loadVoices();
     els.joinGate.classList.add('hidden');
+    // Boot may still be in flight (slow scene load / broadcast.json download);
+    // bootStudio/bootBroadcast check state.unlocked and start playback then.
+    if (!state.booted) {
+      els.sweepStatus.textContent = 'tuning in…';
+      return;
+    }
     if (state.mode === 'broadcast') {
       const newest = ((state.broadcast || {}).bulletins || [])[0];
       if (newest) playBulletin(newest, { replay: true });

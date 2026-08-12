@@ -30,6 +30,19 @@ function launchctl(args) {
   }
 }
 
+// process.execPath is symlink-resolved into version-pinned dirs (Homebrew
+// Cellar, nvm versions) that vanish on upgrade — a plist frozen to one would
+// silently kill the 24/7 daemon later. Prefer the stable public symlink.
+function stableNodePath() {
+  const p = process.execPath;
+  const m = p.match(/^(\/opt\/homebrew|\/usr\/local)\/Cellar\/node(?:@\d+)?\/[^/]+\/bin\/node$/);
+  if (m) {
+    const link = m[1] + '/bin/node';
+    if (existsSync(link)) return link;
+  }
+  return p;
+}
+
 function buildPlist() {
   const binPath = join(PKG_ROOT, 'bin', 'pepper.js');
   const envBlock = process.env.PEPPER_HOME
@@ -48,7 +61,7 @@ function buildPlist() {
   <string>${LABEL}</string>
   <key>ProgramArguments</key>
   <array>
-    <string>${xml(process.execPath)}</string>
+    <string>${xml(stableNodePath())}</string>
     <string>${xml(binPath)}</string>
     <string>start</string>
   </array>

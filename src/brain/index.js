@@ -10,7 +10,7 @@
 // Every public method resolves to a value or null; a failing brain must never
 // crash a cycle.
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadConfig, paths } from '../config.js';
@@ -21,6 +21,7 @@ const STATUS_TIMEOUT_MS = 20_000;
 const GEN_TIMEOUT_MS = 90_000;
 const BUILD_TIMEOUT_MS = 180_000;
 const PROBE_RETRY_MS = 60_000;
+const REBUILD_RETRY_MS = 10 * 60_000;
 const RAPID_CRASH_WINDOW_MS = 60_000;
 const MAX_RAPID_CRASHES = 3;
 
@@ -185,7 +186,9 @@ class Sidecar {
     this.proc = proc;
     this.buf = '';
     proc.stdout.setEncoding('utf8');
-    proc.stdout.on('data', (chunk) => this.#onData(chunk));
+    // Identity guard: after a timeout-kill we may have respawned; a dead
+    // process's late output must not touch the live one's stream state.
+    proc.stdout.on('data', (chunk) => { if (this.proc === proc) this.#onData(chunk); });
     proc.stderr.setEncoding('utf8');
     proc.stderr.on('data', (chunk) => {
       this.stderrTail = (this.stderrTail + chunk).slice(-2048);
@@ -201,8 +204,10 @@ class Sidecar {
       if (this.proc === proc) {
         this.proc = null;
         this.buf = '';
+        // Only the live process may flush: pending requests written to a
+        // respawned sidecar belong to it, not to this corpse's exit event.
+        this.#flushPending();
       }
-      this.#flushPending();
       if (!intentional) this.#recordDeath(why);
     };
     proc.on('error', (e) => finish('sidecar error: ' + e.message));
@@ -246,6 +251,13 @@ class Sidecar {
       if (p) {
         this.pending.delete(msg.id);
         p.resolve(msg);
+      } else if (msg && msg.id == null && msg.ok === false && this.pending.size) {
+        // Swift rejects malformed requests with id:null. The protocol is
+        // serialized (one in flight), so route it to the oldest pending
+        // request instead of letting it hang into the 90s timeout-kill.
+        const [firstId, fp] = this.pending.entries().next().value;
+        this.pending.delete(firstId);
+        fp.resolve(msg);
       }
     }
   }
@@ -272,7 +284,13 @@ class Sidecar {
         },
       });
       try {
-        this.proc.stdin.write(JSON.stringify({ id, ...payload }) + '\n');
+        // Truncated titles/abstracts can leave lone surrogates, which Swift's
+        // JSONSerialization rejects outright — well-form before writing.
+        let line = JSON.stringify({ id, ...payload });
+        line = typeof line.toWellFormed === 'function'
+          ? line.toWellFormed()
+          : line.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '�');
+        this.proc.stdin.write(line + '\n');
       } catch {
         clearTimeout(timer);
         this.pending.delete(id);
@@ -338,8 +356,25 @@ class Brain {
     return run;
   }
 
+  #lastBuildFailAt = 0;
+  #lastBuildFailReason = '';
+
   #ensureBuilt() {
-    if (!this.#buildPromise) this.#buildPromise = this.#build();
+    if (!this.#buildPromise) {
+      // A failed build isn't forever: CLT may get installed, load may clear.
+      // Retry on later probes, but not more often than REBUILD_RETRY_MS.
+      if (Date.now() - this.#lastBuildFailAt < REBUILD_RETRY_MS) {
+        return Promise.resolve({ ok: false, reason: this.#lastBuildFailReason });
+      }
+      this.#buildPromise = this.#build().then((r) => {
+        if (!r.ok) {
+          this.#lastBuildFailAt = Date.now();
+          this.#lastBuildFailReason = r.reason || 'build failed';
+          this.#buildPromise = null;
+        }
+        return r;
+      });
+    }
     return this.#buildPromise;
   }
 
@@ -355,6 +390,13 @@ class Brain {
       let prev = '';
       try { prev = readFileSync(paths.brainFingerprint, 'utf8').trim(); } catch {}
       if (existsSync(paths.brainBin) && prev === fp) return { ok: true };
+      // Without Command Line Tools, /usr/bin/swiftc is Apple's shim and
+      // running it pops the system "Install Developer Tools?" dialog — gate
+      // on xcode-select instead of surprising the user with a GUI prompt.
+      const gate = spawnSync('xcode-select', ['-p'], { stdio: 'ignore' });
+      if (gate.error || gate.status !== 0) {
+        return { ok: false, reason: 'developer tools missing — run `xcode-select --install`' };
+      }
       log.info('brain: building sidecar (first run or source changed)…');
       const res = await runCmd(
         'swiftc',
@@ -377,6 +419,17 @@ class Brain {
     } catch (e) {
       return { ok: false, reason: 'build error: ' + e.message };
     }
+  }
+
+  // Runtime demotion: if a live foundation request reports the model is gone
+  // (Apple Intelligence toggled off, assets updating), drop the cached probe
+  // so the next call re-resolves and can fall through to local/fallback.
+  #noteFoundationReply(reply) {
+    if (reply && reply.ok === false
+      && /unavailable|not ready|notready|assets|intelligence/i.test(String(reply.error || ''))) {
+      this.#probe = { ok: false, reason: String(reply.error), at: Date.now() };
+    }
+    return reply;
   }
 
   async #tryFoundation() {
@@ -463,10 +516,10 @@ class Brain {
   }
 
   async #foundationGenerate(instructions, prompt, max) {
-    const reply = await this.#enqueue(() => this.#sidecar.request(
+    const reply = this.#noteFoundationReply(await this.#enqueue(() => this.#sidecar.request(
       { op: 'generate', instructions, prompt, max },
       GEN_TIMEOUT_MS,
-    ));
+    )));
     return reply && reply.ok && typeof reply.text === 'string' ? reply.text : null;
   }
 
@@ -487,10 +540,10 @@ class Brain {
     try {
       const m = await this.#mode();
       if (m.mode === 'foundation') {
-        const reply = await this.#enqueue(() => this.#sidecar.request(
+        const reply = this.#noteFoundationReply(await this.#enqueue(() => this.#sidecar.request(
           { op: 'segment', topic: String(topic || ''), digest: String(digest || '') },
           GEN_TIMEOUT_MS,
-        ));
+        )));
         return reply && reply.ok ? validateSegment(reply) : null;
       }
       if (m.mode === 'local') {
@@ -513,9 +566,9 @@ class Brain {
       const context = anchorContext(ctx);
       const m = await this.#mode();
       if (m.mode === 'foundation') {
-        const reply = await this.#enqueue(
+        const reply = this.#noteFoundationReply(await this.#enqueue(
           () => this.#sidecar.request({ op: 'anchor', context }, GEN_TIMEOUT_MS),
-        );
+        ));
         return reply && reply.ok ? validateAnchor(reply) : null;
       }
       if (m.mode === 'local') {

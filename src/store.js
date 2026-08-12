@@ -1,15 +1,21 @@
 import {
   readFileSync, writeFileSync, existsSync, appendFileSync, renameSync, unlinkSync,
+  statSync, openSync, readSync, closeSync,
 } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { paths, ensureHome } from './config.js';
 
 export function slugify(name) {
-  return String(name).toLowerCase().trim()
+  const s = String(name).toLowerCase().trim()
     .replace(/['’]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 48) || 'topic';
+    .slice(0, 48)
+    .replace(/-+$/, '');
+  if (s) return s;
+  // Names with no letters/digits at all (emoji-only, punctuation) still need
+  // a unique, stable slug — a shared constant would make beats collide.
+  return 'topic-' + createHash('sha1').update(String(name)).digest('hex').slice(0, 8);
 }
 
 export function itemId(x) {
@@ -89,27 +95,53 @@ function readItems(slug) {
 }
 
 function normTitle(t) {
-  return String(t).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 80);
+  return String(t).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 80);
+}
+
+// Titles that normalize to almost nothing can't be used for title-dedupe —
+// they'd collide with every other such title. URL/id dedupe still applies.
+const titleKey = (t) => {
+  const nt = normTitle(t);
+  return nt.length >= 4 ? nt : null;
+};
+
+// If the previous append was cut short (power loss on the 24/7 daemon), the
+// file ends mid-line; appending without a newline would glue two records.
+function appendPrefix(file) {
+  try {
+    const size = statSync(file).size;
+    if (!size) return '';
+    const fd = openSync(file, 'r');
+    const buf = Buffer.alloc(1);
+    readSync(fd, buf, 0, 1, size - 1);
+    closeSync(fd);
+    return buf[0] === 10 ? '' : '\n';
+  } catch {
+    return '';
+  }
 }
 
 export function appendItems(slug, incoming) {
   ensureHome();
   const existing = readItems(slug);
   const seenIds = new Set(existing.map((i) => i.id));
-  const seenTitles = new Set(existing.map((i) => normTitle(i.title)));
+  const seenTitles = new Set(existing.map((i) => titleKey(i.title)).filter(Boolean));
   const now = new Date().toISOString();
   const fresh = [];
   for (const raw of incoming || []) {
     if (!raw || !raw.title) continue;
     const id = itemId(raw);
-    const nt = normTitle(raw.title);
-    if (seenIds.has(id) || seenTitles.has(nt)) continue;
+    const nt = titleKey(raw.title);
+    if (seenIds.has(id) || (nt && seenTitles.has(nt))) continue;
     seenIds.add(id);
-    seenTitles.add(nt);
+    if (nt) seenTitles.add(nt);
     fresh.push({ ...raw, id, topic: slug, seenAt: now });
   }
   if (fresh.length) {
-    appendFileSync(paths.items(slug), fresh.map((i) => JSON.stringify(i)).join('\n') + '\n');
+    appendFileSync(
+      paths.items(slug),
+      appendPrefix(paths.items(slug)) + fresh.map((i) => JSON.stringify(i)).join('\n') + '\n',
+    );
     if (existing.length + fresh.length > 900) {
       const all = readItems(slug).slice(-600);
       atomic(paths.items(slug), all.map((i) => JSON.stringify(i)).join('\n') + '\n');

@@ -85,13 +85,44 @@ export function createPepperServer(opts = {}) {
     for (const res of sse) res.write(chunk);
   }
 
-  async function brainStatus() {
-    try {
-      const { brain } = await mods();
-      return await brain.status();
-    } catch (e) {
-      return { mode: 'fallback', reason: 'brain unavailable: ' + e.message };
+  // Brain warm-up can take minutes (first-run swiftc build), and ui.js gives
+  // /api/state a 2s budget to decide studio vs broadcast mode — so status
+  // reads answer from a cache while the real probe refreshes in background.
+  let lastBrain = { mode: 'fallback', reason: 'warming up' };
+  let brainRefresh = null;
+  function refreshBrain() {
+    if (!brainRefresh) {
+      brainRefresh = (async () => {
+        const prev = JSON.stringify(lastBrain);
+        try {
+          const { brain } = await mods();
+          lastBrain = await brain.status();
+        } catch (e) {
+          lastBrain = { mode: 'fallback', reason: 'brain unavailable: ' + e.message };
+        } finally {
+          brainRefresh = null;
+        }
+        if (JSON.stringify(lastBrain) !== prev) {
+          sseSend('status', {
+            researching: state.researching,
+            nextCycleAt: state.nextCycleAt,
+            lastCycleAt: state.lastCycleAt,
+            latestBulletinId: state.latestBulletinId,
+            brain: lastBrain,
+          });
+        }
+      })();
     }
+    return brainRefresh;
+  }
+
+  async function brainStatus() {
+    const refresh = refreshBrain();
+    await Promise.race([
+      refresh,
+      new Promise((res) => { const t = setTimeout(res, 1200); t.unref?.(); }),
+    ]);
+    return lastBrain;
   }
 
   async function pushStatus() {
@@ -146,6 +177,7 @@ export function createPepperServer(opts = {}) {
 
   const readBody = (req) => new Promise((resolve, reject) => {
     let b = '';
+    req.setEncoding('utf8'); // StringDecoder keeps multibyte chars split across chunks intact
     req.on('data', (chk) => {
       b += chk;
       if (b.length > 65536) { reject(new Error('body too large')); req.destroy(); }
@@ -286,14 +318,17 @@ export function createPepperServer(opts = {}) {
   function listen() {
     return new Promise((resolve, reject) => {
       const tryPort = (candidate, left) => {
+        // A failed attempt leaves its listen() callback registered as a stale
+        // once('listening') listener that would resolve with the busy port.
+        server.removeAllListeners('listening');
         server.once('error', (e) => {
           if (e.code === 'EADDRINUSE' && !explicitPort && left > 0) tryPort(candidate + 1, left - 1);
           else reject(e);
         });
         server.listen(candidate, '127.0.0.1', () => {
-          port = candidate;
+          port = server.address().port;
           schedule();
-          resolve({ port: candidate });
+          resolve({ port });
         });
       };
       tryPort(Number(port), 10);

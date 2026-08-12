@@ -39,7 +39,7 @@ function lineFor(it) {
 
 // buildDigest(topicName, items) → wire-notes string, ≤ 2400 chars.
 export function buildDigest(topicName, items) {
-  const head = 'Wire notes — ' + collapseWs(topicName) + ':';
+  const head = 'Wire notes — ' + collapseWs(topicName).slice(0, 120) + ':';
   const lines = [head];
   let len = head.length;
   for (const it of items || []) {
@@ -151,12 +151,16 @@ export async function runCycle({ emit } = {}) {
   for (const t of topics) {
     const fresh = freshBy.get(t.slug) || [];
     if (!firstEver && !fresh.length) continue;
+    // Prefer this sweep's fresh items (fetch order: news, hn, arxiv — lens-diverse).
+    // recentItems returns newest-appended first, which is lens-skewed; re-rank it.
     let items = fresh;
-    if (firstEver) {
+    if (!items.length && firstEver) {
       try {
-        items = store.recentItems(t.slug, 10);
+        const rank = { news: 0, hn: 1, arxiv: 2 };
+        items = store.recentItems(t.slug, 12)
+          .sort((a, b) => (rank[a.lens] ?? 3) - (rank[b.lens] ?? 3));
       } catch {
-        items = fresh;
+        items = [];
       }
     }
     if (!items.length) continue;

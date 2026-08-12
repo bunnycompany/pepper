@@ -25,7 +25,9 @@ export function decodeEntities(s) {
     .replace(/&#x([0-9a-f]+);/gi, (_, h) => fromCodePoint(parseInt(h, 16)))
     .replace(/&#(\d+);/g, (_, d) => fromCodePoint(parseInt(d, 10)))
     .replace(/&([a-zA-Z]+);/g, (m, name) => {
-      const hit = NAMED_ENTITIES[name] ?? NAMED_ENTITIES[name.toLowerCase()];
+      const hit = Object.hasOwn(NAMED_ENTITIES, name)
+        ? NAMED_ENTITIES[name]
+        : (Object.hasOwn(NAMED_ENTITIES, name.toLowerCase()) ? NAMED_ENTITIES[name.toLowerCase()] : undefined);
       return hit !== undefined ? hit : m;
     });
 }
