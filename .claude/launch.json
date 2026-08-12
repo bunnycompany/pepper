@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pepper",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["bin/pepper.js", "start"],
+      "port": 4747
+    }
+  ]
+}

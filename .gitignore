@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+*.log
+.dev-home/
+pepper-site/
+.claude/settings.local.json

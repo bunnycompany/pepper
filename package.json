@@ -1,0 +1,53 @@
+{
+  "name": "@bunnycompany/pepper",
+  "version": "0.1.0",
+  "description": "Pepper — MNN's 24/7 on-device research anchor. She tracks your topics, writes the bulletin with Apple Foundation Models, and reads it from a 3D newsroom.",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "bin": {
+    "pepper": "bin/pepper.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "web",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "start": "node bin/pepper.js start",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@pixiv/three-vrm": "^3.1.0",
+    "three": "^0.170.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bunnycompany/pepper.git"
+  },
+  "homepage": "https://github.com/bunnycompany/pepper#readme",
+  "bugs": {
+    "url": "https://github.com/bunnycompany/pepper/issues"
+  },
+  "keywords": [
+    "apple-intelligence",
+    "foundation-models",
+    "on-device",
+    "research-agent",
+    "news",
+    "newsroom",
+    "vrm",
+    "three",
+    "mnn",
+    "agpl"
+  ],
+  "author": "bunnycompany",
+  "publishConfig": {
+    "access": "public"
+  }
+}
