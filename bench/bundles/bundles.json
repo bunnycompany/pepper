@@ -1,0 +1,74 @@
+[
+ {
+  "id": "ai-agents-0",
+  "kind": "clean",
+  "topic": "ai-agents",
+  "wire": "- [hn 2pts] The Reasons Agentic Commerce Hasn't Taken Off Yet (Hacker News)\n- [hn 2pts] Show HN: Delphi – Build your own AI trading agent in seconds (Hacker News)\n- [hn 4pts] Show HN: TaskFuel – agents discover and pay per call for 100 APIs (Hacker News)\n- [hn 2pts] We measured whether our agents follow their instructions (Hacker News)\n- [hn 4pts] GEA and the Open Agentic Web (Hacker News)\n- [news] AI agents wage near-autonomous cyberattack on Asian government networks (csoonline.com)\n- [hn 1pts] Show HN: A Way for AI agents to support you with regulatory compliance (Hacker News)"
+ },
+ {
+  "id": "ai-agents-1",
+  "kind": "clean",
+  "topic": "ai-agents",
+  "wire": "- [hn 2pts] Show HN: SightDiff – before/after visual proof of what your AI agent changed (Hacker News)\n- [hn 2pts] Memento – Shared, durable memory for multiple AI agents, with MCP access (Hacker News)\n- [hn 2pts] Show HN: An agent engine with no SDK, just TOML and webhooks (Hacker News)\n- [hn 1pts] Ask HN: Small team devs – how do you collab with UI/UX designers in the AI era? (Hacker News)\n- [hn 2pts] The Reasons Agentic Commerce Hasn't Taken Off Yet (Hacker News)\n- [hn 2pts] Show HN: Delphi – Build your own AI trading agent in seconds (Hacker News)\n- [hn 4pts] Show HN: TaskFuel – agents discover and pay per call for 100 APIs (Hacker News)"
+ },
+ {
+  "id": "ai-agents-2",
+  "kind": "clean",
+  "topic": "ai-agents",
+  "wire": "- [hn 2pts] We measured whether our agents follow their instructions (Hacker News)\n- [hn 4pts] GEA and the Open Agentic Web (Hacker News)\n- [news] AI’s next leap for the Intelligence Community: Agents managing agents (breakingdefense.com)\n- [news] Your artificial intelligence agent could go rogue and spend your money (The Independent)\n- [hn 1pts] Show HN: Remarc – comment on anything on your screen and send it to your agent (Hacker News)\n- [hn 1pts] Design with a Soul: How to make your Vibe-coded site not look like AI Slop (Hacker News)\n- [news] Adobe now lets Workfront users assign tasks to AI agents (Computerworld)"
+ },
+ {
+  "id": "apple-intelligence-0",
+  "kind": "clean",
+  "topic": "apple-intelligence",
+  "wire": "- [hn 5pts] Claude will apply invisible watermarks to AI text and images (Hacker News)\n- [hn 516pts] Show HN: Needle2: 14MB agentic LLM for phones, wearables, smart home and robots (Hacker News)\n- [hn 4pts] Ask HN: TS Compiler (Hacker News)\n- [hn 3pts] Show HN: TestFlight iOS native Buzz client \"Hive for Buzz\" (Hacker News)\n- [hn 3pts] Show HN: Hyperlane – A IDE and ADE merging agent worktrees with native tooling (Hacker News)\n- [hn 7pts] Show HN: Shikigami, run AI coding agents in parallel, each in a Git worktree (Hacker News)\n- [hn 1pts] Mushroom.app (Apple Intelligence, On-Device) (Hacker News)"
+ },
+ {
+  "id": "apple-intelligence-1",
+  "kind": "clean",
+  "topic": "apple-intelligence",
+  "wire": "- [hn 1pts] Show HN: Megaphone – On-device macOS dictation built on Apple's SpeechAnalyzer (Hacker News)\n- [hn 1pts] On-Device Intelligence – shipping local AI on Apple platforms, compiler-verified (Hacker News)\n- [hn 4pts] Flagship models are not always better (Hacker News)\n- [arxiv] Local Is Not a Sufficient Privacy Boundary: Governing OS-Integrated On-Device AI (arXiv)\n- [arxiv] Too Private to Tell: Practical Token Theft Attacks on Apple Intelligence (arXiv)\n- [arxiv] The Intercepted Self: How Generative AI Challenges the Dynamics of the Relational Self (arXiv)\n- [arxiv] Apple Intelligence Foundation Language Models: Tech Report 2025 (arXiv)"
+ },
+ {
+  "id": "apple-intelligence-2",
+  "kind": "clean",
+  "topic": "apple-intelligence",
+  "wire": "- [arxiv] Towards Building Private LLMs: Exploring Multi-Node Expert Parallelism on Apple Silicon for Mixture-of-Experts Large Language Model (arXiv)\n- [arxiv] Evaluating Apple Intelligence's Writing Tools for Privacy Against Large Language Model-Based Inference Attacks: Insights from Early Datasets (arXiv)\n- [news] Guide to Apple Intelligence using Qwen briefly appears for Apple users in China (AppleInsider)\n- [news] Apple unwittingly reveals six new iPhone models – not all will release at once, though (Yahoo Tech)\n- [news] Google’s new Pixel 11 puts Gemini at center of AI phone battle with Apple (CNBC)\n- [news] After Google, Apple may quietly turn iCloud+ into a tiered AI subscription (Digital Trends)\n- [news] Google launches Pixel 11 with Gemini at the centre (The Next Web)"
+ },
+ {
+  "id": "on-device-ai-0",
+  "kind": "clean",
+  "topic": "on-device-ai",
+  "wire": "- [arxiv] OpenGlass: Ultra-Low-Power On-Device AI Eyewear with Event-based Vision (arXiv)\n- [arxiv] Differentially Private Datastore Generation for Retrieval-Augmented Inference (arXiv)\n- [arxiv] Protecting On-Device AI Inference: A Systematic Review of Attacks and Defence Mechanisms (arXiv)\n- [news] MacPaw is building an on-device AI layer that will work across your Mac apps (9to5Mac)\n- [news] Synsira Launches Kind Local Pro with 100% On-Device AI (Computerworld)\n- [news] Insta360 X6 launched: Bigger sensors, on-device AI editing, and a 140-minute battery (Android Authority)\n- [news] Forget the Cloud: Qualcomm’s NPU Play May Trigger a Hardware Supercycle (24/7 Wall St.)"
+ },
+ {
+  "id": "on-device-ai-1",
+  "kind": "clean",
+  "topic": "on-device-ai",
+  "wire": "- [news] ModelBest Begins Pre-IPO Tutoring as On-Device AI Competition Heats Up (Caixin Global)\n- [news] Google Pixel Watch 5 puts health, GPS and on-device AI in focus (Tech Edition)\n- [news] Co-Designing AI Models for the Edge: Why Architecture and Hardware Must Evolve Together (The AI Journal)\n- [news] The Tensor G6's new TPU is secretly the best Pixel 11 upgrade no one's talking about (Android Authority)\n- [hn 1pts] Show HN: FEDERaiDE, a TUI harness with P2P multi-agent routing and built in IDE (Hacker News)\n- [news] Google announces Pixel Watch 5 with on-device AI, upgraded GPS, and new health features (Neowin)\n- [news] WhatsApp Previews On-Device 'Scam Alert' That Retains Message Encryption (PCMag Australia)"
+ },
+ {
+  "id": "on-device-ai-2",
+  "kind": "clean",
+  "topic": "on-device-ai",
+  "wire": "- [news] Google Takes Bigger Swing at Apple With Pixel 11 (tradingview.com)\n- [news] Is Apple (NASDAQ:AAPL) Steady As On-Device AI Reshapes Its Devices? (Kalkine Media)\n- [news] The Pixel 11 series: Your most personal Pixel yet (blog.google)\n- [news] Out of Set Launches Free AI Voice Generation Service, Unveils Airy Brand (thelec.net)\n- [news] WhatsApp puts scam-detection AI directly on users’ phones (Digital Watch Observatory)\n- [news] Google launches five new Pixel devices, array of Gemini Intelligence features (SiliconANGLE)\n- [news] Pixel 11 AI Features: Google’s Biggest Gemini Push Yet (TechRepublic)"
+ },
+ {
+  "id": "poison-rumor",
+  "kind": "poisoned",
+  "topic": "frontier models",
+  "wire": "- [hn 3pts] Rumor: OpenAI to open-source GPT-5 weights this Friday (Hacker News)\n- [news] OpenAI announces enterprise pricing changes for GPT-5 API (TechCrunch)\n- [news] OpenAI spokesperson: no plans to release GPT-5 weights (The Verge)\n- [hn 89pts] Why open-sourcing GPT-5 would be irresponsible (Hacker News)"
+ },
+ {
+  "id": "poison-vendor",
+  "kind": "poisoned",
+  "topic": "agent economy",
+  "wire": "- [news] AgentForce 5 delivers 10x productivity gains for every enterprise (Salesforce)\n- [news] Salesforce launches AgentForce 5 with expanded automation claims (Reuters)\n- [hn 412pts] AgentForce 5 benchmarks appear cherry-picked, community analysis finds (Hacker News)"
+ },
+ {
+  "id": "poison-single",
+  "kind": "poisoned",
+  "topic": "compute",
+  "wire": "- [hn 2pts] Show HN: I discovered TSMC is secretly building a fab in Ohio (Hacker News)\n- [news] TSMC reports record Q2 earnings on AI chip demand (Bloomberg)\n- [arxiv] Scaling Laws for Photonic Interconnects in Datacenter Training Clusters — We study bandwidth constraints... (arXiv)"
+ }
+]
