@@ -897,9 +897,9 @@ async function loadVRMAvatar() {
   S.avatarGroup.updateMatrixWorld(true);
   if (S.vrmB.hips) {
     const hy = S.vrmB.hips.getWorldPosition(S.tmpA).y;
-    vrm.scene.position.y -= (hy - (DESK_TOP - 0.14));
+    vrm.scene.position.y -= (hy - (DESK_TOP - 0.02));
   }
-  vrm.scene.position.z = -0.08;
+  vrm.scene.position.z = 0.1;
   S.avatarGroup.updateMatrixWorld(true);
   if (S.vrmB.head) S.headY = S.vrmB.head.getWorldPosition(S.tmpA).y + 0.07;
 
@@ -928,6 +928,11 @@ function poseVRMSeated(vrm) {
   if (B.hips) B.hips.rotation.x = 0.05;
   if (B.spine) B.spine.rotation.x = 0.07;   // slight anchor lean-in
   if (B.chest) B.chest.rotation.x = 0.05;
+  // arms down from the normalized T-pose, elbows bent toward the desk
+  if (B.lUp) { B.lUp.rotation.z = -1.15; B.lUp.rotation.x = 0.22; }
+  if (B.rUp) { B.rUp.rotation.z = 1.15; B.rUp.rotation.x = 0.22; }
+  if (B.lLow) { B.lLow.rotation.y = -0.85; }
+  if (B.rLow) { B.rLow.rotation.y = 0.85; }
   return B;
 }
 
