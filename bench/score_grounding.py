@@ -28,7 +28,10 @@ def main(bundles_path, outputs_path):
         if not bundle:
             continue
         wire = bundle["wire"].lower()
-        ents = entities(r["output"])
+        # Think-then-speak models emit "DESK NOTES: ... ON AIR: <report>";
+        # only the broadcast is scored — private reasoning isn't on air.
+        on_air = r["output"].split("ON AIR:")[-1] if "ON AIR:" in r["output"] else r["output"]
+        ents = entities(on_air)
         if not ents:
             rows.append((r["id"], 1.0, []))
             continue
