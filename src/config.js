@@ -33,7 +33,7 @@ export const paths = {
 export const DEFAULTS = {
   port: 4747,
   intervalMinutes: 15,
-  voice: { enabled: true, rate: 1.02 },
+  voice: { enabled: true, rate: 1.02, identity: 'bright-anchor' },
   brain: { prefer: 'foundation', local: { url: '', model: '' } },
   site: { title: 'MNN — Model News Network', tagline: 'All your models. All the time.' },
 };

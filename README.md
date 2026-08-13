@@ -136,9 +136,12 @@ on her own distilled voice. A smaller singularity-desk specialist build is in
 progress; weights land on Hugging Face once they pass the desk's own
 truth-parsing benchmark.
 
-On the roadmap alongside it: a designed voice (Qwen3-TTS VoiceDesign — a
-synthesized voice identity, no human cloned) streamed from a local
-`mlx-audio` server, replacing browser TTS on machines that can carry it.
+On the roadmap alongside it: her real voice. Pepper ships **three designed
+voice identities** — `bright-anchor`, `calm-pro`, and `vtuber-spark`, golden
+reference clips in [`voices/`](voices), synthesized from text descriptions so
+no human was cloned — which a local `mlx-audio` TTS tier will stream in place
+of browser TTS on machines that can carry it. Provenance, compliance, and the
+full plan: [docs/VOICE.md](docs/VOICE.md).
 
 ## Give her a face
 
