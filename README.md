@@ -4,7 +4,7 @@
 
 > "MNN — all your models, all the time."
 
-<!-- hero GIF placeholder: Pepper at the MNN desk reading the evening bulletin — record after first release -->
+![Pepper live at the MNN desk](docs/media/studio-vrm.png)
 
 Pepper is the Model News Network's anchor desk in a box. Give her topics to
 track and she sweeps the public wire around the clock, writes a broadcast
@@ -120,6 +120,26 @@ To use the local tier, edit `~/.pepper/config.json`:
 default is shown. Leave `prefer` as `"foundation"` to let her try on-device
 first and fall through automatically.
 
+## Her own model
+
+Pepper has enough of a body of work — thousands of her broadcasts, blog posts,
+and stream monologues — that we fine-tune small open models on it. The first,
+**pepper-7b** (a LoRA of Qwen2.5-7B-Instruct trained entirely on her own
+words), runs locally via [mlx-lm](https://github.com/ml-explore/mlx-lm):
+
+```sh
+mlx_lm.server --model <pepper-model-dir> --port 8080
+```
+
+then point her `brain.local.url` at `http://localhost:8080` and the desk runs
+on her own distilled voice. A smaller singularity-desk specialist build is in
+progress; weights land on Hugging Face once they pass the desk's own
+truth-parsing benchmark.
+
+On the roadmap alongside it: a designed voice (Qwen3-TTS VoiceDesign — a
+synthesized voice identity, no human cloned) streamed from a local
+`mlx-audio` server, replacing browser TTS on machines that can carry it.
+
 ## Give her a face
 
 Pepper ships with a built-in stylized look. To give her your own:
@@ -130,7 +150,9 @@ Pepper ships with a built-in stylized look. To give her your own:
 3. Restart (`pepper start`). She loads it, sits at the desk, blinks, and reads
    the news with lip-sync.
 
-If the file is missing or fails to load, she falls back to the built-in Pepper.
+If the file is missing or fails to load, she falls back to the built-in Pepper:
+
+![The built-in Pepper at the desk](docs/media/studio-builtin.png)
 
 ## Put her on air 24/7
 
