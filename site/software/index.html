@@ -14,153 +14,163 @@
 <meta name="twitter:site" content="@pepper_research">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌶</text></svg>">
 <style>
-  :root { --red: #e02020; --red-dk: #b81a1a; --bg: #070d18; --panel: #0d1626; --line: #1c2a42;
-          --ink: #eef2f8; --dim: #93a0b5; --cyan: #35d6ff; }
+  :root {
+    --red: #d81f1f; --red-dk: #b81a1a;
+    --bg: #0a0e16; --surface: #10151f; --line: #1e2633;
+    --ink: #f2f5f9; --body: #b7c1cf; --dim: #7d8898; --accent: #48c8f0;
+  }
   * { margin: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { background: var(--bg); color: var(--ink); font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
-  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 24px; }
+  body { background: var(--bg); color: var(--ink); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 28px; }
   a { color: inherit; }
+  h2 { font-size: 26px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 10px; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .16em; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .lede { color: var(--body); max-width: 560px; }
+  section { padding: 40px 0; }
 
-  nav { display: flex; align-items: center; gap: 22px; padding: 18px 0; font-size: 14px; font-weight: 600; }
-  .logo { background: var(--red); color: #fff; font-weight: 900; font-size: 19px; letter-spacing: 1px; padding: 4px 12px; border-radius: 6px; font-style: italic; text-decoration: none; }
+  nav { display: flex; align-items: center; gap: 26px; padding: 20px 0; font-size: 14px; font-weight: 600; }
+  .logo { background: var(--red); color: #fff; font-weight: 900; font-size: 17px; letter-spacing: .06em; padding: 5px 12px; border-radius: 5px; font-style: italic; text-decoration: none; }
   nav a:not(.logo) { color: var(--dim); text-decoration: none; }
   nav a:not(.logo):hover { color: var(--ink); }
   nav .spacer { flex: 1; }
-  nav .gh { border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px; }
 
-  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 44px; align-items: center; padding: 56px 0 30px; }
-  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
-  h1 { font-size: clamp(34px, 4.6vw, 52px); font-weight: 900; line-height: 1.08; letter-spacing: -.5px; }
-  h1 em { color: var(--red); font-style: normal; }
-  .sub { color: var(--dim); font-size: 19px; margin: 18px 0 26px; max-width: 460px; }
-  .sub b { color: var(--ink); font-weight: 600; }
-  .cta { display: flex; gap: 14px; flex-wrap: wrap; }
-  .btn { display: inline-block; text-decoration: none; font-weight: 700; font-size: 16px; border-radius: 10px; padding: 14px 26px; }
-  .btn.primary { background: var(--red); color: #fff; box-shadow: 0 8px 24px rgba(224,32,32,.35); }
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; padding: 52px 0 26px; }
+  @media (max-width: 880px) { .hero { grid-template-columns: 1fr; } }
+  h1 { font-size: clamp(34px, 4.4vw, 50px); font-weight: 850; line-height: 1.06; letter-spacing: -.02em; }
+  h1 .accent { color: var(--red); }
+  .sub { color: var(--body); font-size: 18px; line-height: 1.65; margin: 20px 0 28px; max-width: 460px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .btn { display: inline-block; text-decoration: none; font-weight: 700; font-size: 15px; border-radius: 8px; padding: 13px 24px; }
+  .btn.primary { background: var(--red); color: #fff; }
   .btn.primary:hover { background: var(--red-dk); }
-  .btn.ghost { border: 1px solid var(--line); color: var(--ink); background: var(--panel); }
-  .btn.ghost:hover { border-color: var(--cyan); }
-  .hero-shot { border-radius: 14px; border: 1px solid var(--line); width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
-  .trustline { color: var(--dim); font-size: 13px; margin-top: 16px; letter-spacing: .3px; }
+  .btn.quiet { border: 1px solid var(--line); color: var(--ink); }
+  .btn.quiet:hover { border-color: var(--dim); }
+  .hero-shot { border-radius: 10px; border: 1px solid var(--line); width: 100%; display: block; }
+  .trustline { color: var(--dim); font-size: 13px; margin-top: 18px; }
 
-  .installer { background: linear-gradient(180deg, #0d1626, #0a1220); border: 1px solid var(--line); border-radius: 16px; padding: 30px; margin: 26px 0 8px; }
-  .installer h2 { font-size: 13px; letter-spacing: 3px; color: var(--cyan); margin-bottom: 16px; }
-  .cmd { display: flex; align-items: center; gap: 12px; background: #060a12; border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; }
-  .cmd code { flex: 1; font: 15px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color: #d7e3f4; overflow-x: auto; white-space: nowrap; }
-  .cmd code b { color: var(--cyan); font-weight: 400; }
-  .copy { background: var(--panel); color: var(--dim); border: 1px solid var(--line); border-radius: 7px; font-size: 12px; font-weight: 700; padding: 7px 12px; cursor: pointer; }
-  .copy:hover { color: var(--ink); border-color: var(--cyan); }
-  .installer .alt { color: var(--dim); font-size: 13px; }
-  .installer .alt code { color: #b9c6da; font-family: ui-monospace, Menlo, monospace; }
+  .install { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 28px; }
+  .cmd { display: flex; align-items: center; gap: 12px; background: #070b12; border: 1px solid var(--line); border-radius: 8px; padding: 13px 16px; margin-top: 12px; }
+  .cmd code { flex: 1; font: 14.5px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color: #dbe5f1; overflow-x: auto; white-space: nowrap; }
+  .cmd .p { color: var(--accent); }
+  .copy { background: transparent; color: var(--dim); border: 1px solid var(--line); border-radius: 6px; font-size: 12px; font-weight: 700; padding: 6px 12px; cursor: pointer; }
+  .copy:hover { color: var(--ink); border-color: var(--dim); }
+  .install .alt { color: var(--dim); font-size: 13px; margin-top: 14px; }
+  .install .alt code { color: var(--body); font-family: ui-monospace, Menlo, monospace; }
 
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 56px 0 8px; }
-  @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
-  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
-  .step .n { display: inline-block; background: var(--red); color: #fff; font-weight: 900; border-radius: 6px; width: 26px; height: 26px; text-align: center; line-height: 26px; margin-bottom: 12px; }
-  .step h3 { font-size: 17px; margin-bottom: 6px; }
-  .step p { color: var(--dim); font-size: 14px; }
-  .step img { width: 100%; border-radius: 8px; border: 1px solid var(--line); margin-top: 14px; }
+  .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 880px) { .cols { grid-template-columns: 1fr; } }
+  .col { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px; }
+  .col h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 7px; }
+  .col p { color: var(--dim); font-size: 14px; line-height: 1.6; }
+  .col .n { color: var(--accent); font: 700 13px ui-monospace, Menlo, monospace; display: block; margin-bottom: 10px; }
 
-  .quote { text-align: center; margin: 60px auto 0; max-width: 640px; }
-  .quote p { font-size: 22px; font-weight: 600; line-height: 1.45; }
-  .quote span { color: var(--dim); font-size: 14px; }
+  .bench { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .bench-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; }
+  @media (max-width: 880px) { .bench-grid { grid-template-columns: 1fr; } }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th { text-align: left; color: var(--dim); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--body); }
+  tr.hers td { color: var(--ink); font-weight: 700; background: rgba(216,31,31,.06); }
+  td:first-child { font-weight: 600; }
+  .bench a { color: var(--accent); text-decoration: none; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 56px 0; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
-  .card h3 { font-size: 16px; margin-bottom: 8px; }
-  .card p { color: var(--dim); font-size: 14px; }
-  .card a { color: var(--cyan); text-decoration: none; }
+  .deploy .path { display: flex; gap: 16px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .deploy .path:last-child { border-bottom: none; }
+  .deploy .path b { min-width: 190px; font-size: 15px; }
+  .deploy .path p { color: var(--dim); font-size: 14px; }
+  .deploy .path code { color: var(--body); font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+  .deploy-btn { display: inline-block; margin-top: 6px; }
 
-  .ticker { overflow: hidden; white-space: nowrap; border-block: 1px solid var(--line); padding: 9px 0; color: var(--dim); font-size: 13px; letter-spacing: 1px; }
-  .ticker span { display: inline-block; animation: t 32s linear infinite; }
-  @keyframes t { from { transform: translateX(12%); } to { transform: translateX(-100%); } }
-
-  footer { padding: 30px 0 52px; color: var(--dim); font-size: 13px; }
-  footer a { color: var(--dim); }
+  footer { border-top: 1px solid var(--line); padding: 30px 0 52px; color: var(--dim); font-size: 13px; line-height: 1.7; }
+  footer a { color: var(--body); text-decoration: none; }
+  footer .links { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; font-weight: 600; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <nav>
     <a class="logo" href="/">MNN</a>
-    <a href="https://pepper.watch">Watch live</a>
-    <a href="https://pepper.ceo">Meet Pepper</a>
-    <a href="https://pepper.company">The network</a>
+    <a href="https://pepper.watch">Live desk</a>
+    <a href="https://pepper.ceo">Pepper</a>
+    <a href="https://pepper.company">Network</a>
     <span class="spacer"></span>
-    <a class="gh" href="https://github.com/bunnycompany/pepper">GitHub ↗</a>
+    <a href="https://huggingface.co/pepper-research">Models</a>
+    <a href="https://github.com/bunnycompany/pepper">GitHub</a>
   </nav>
 
-  <section class="hero">
+  <header class="hero">
     <div>
-      <h1>Your personal news anchor.<br><em>On your machine.</em></h1>
-      <p class="sub">Tell Pepper what you care about — <b>in plain words</b>. She researches it around the clock, writes the bulletin with an on-device model, and presents it from her own 3D studio. <b>No cloud. No accounts. No telemetry.</b></p>
+      <h1>Your personal news anchor.<br><span class="accent">On your machine.</span></h1>
+      <p class="sub">Tell Pepper what you care about, in plain words. She researches it around the clock, writes the bulletin with an on-device model, and presents it from her own studio — with her own voice. No cloud, no accounts, no telemetry.</p>
       <div class="cta">
-        <a class="btn primary" href="#install">⬇ Install Pepper</a>
-        <a class="btn ghost" href="https://pepper.watch">▶ Watch her live first</a>
+        <a class="btn primary" href="#install">Install Pepper</a>
+        <a class="btn quiet" href="https://pepper.watch">Watch the live desk</a>
       </div>
-      <p class="trustline">Open source (AGPL-3.0) · benchmarked, not vibes · macOS gets the full on-device brain</p>
+      <p class="trustline">Open source, AGPL-3.0 · Benchmarked, not vibes · Full on-device brain on Apple Silicon</p>
     </div>
-    <img class="hero-shot" src="studio.png" alt="Pepper presenting at the MNN research desk">
-  </section>
+    <img class="hero-shot" src="studio.png" alt="Pepper presenting at the MNN research desk" width="1600" height="1000">
+  </header>
 
-  <section class="installer" id="install">
-    <h2>INSTALL — 30 SECONDS TO AIR</h2>
-    <div class="cmd">
-      <code><b>curl</b> -fsSL pepper.software | <b>sh</b></code>
-      <button class="copy" data-cmd="curl -fsSL pepper.software | sh">COPY</button>
-    </div>
-    <div class="cmd">
-      <code><b>pepper</b> start</code>
-      <button class="copy" data-cmd="pepper start">COPY</button>
-    </div>
-    <p class="alt">Prefer npm directly? <code>npm i -g @pepperchan/pepper</code> · Needs Node.js 18.17+ · She keeps everything in <code>~/.pepper</code>.</p>
-  </section>
-
-  <section class="steps">
-    <div class="step">
-      <span class="n">1</span>
-      <h3>Install &amp; start</h3>
-      <p>One command. Her studio opens in your browser — desk, chyron, ticker, the works.</p>
-    </div>
-    <div class="step">
-      <span class="n">2</span>
-      <h3>Tell her your interests</h3>
-      <p>"local AI, robotics, and chip supply chains" — that's it. She turns plain words into research beats and starts sweeping.</p>
-      <img src="onboard.png" alt="Telling Pepper your interests in plain words">
-    </div>
-    <div class="step">
-      <span class="n">3</span>
-      <h3>She goes on air</h3>
-      <p>Bulletins every sweep, sources named. Ask follow-ups in chat — "research X" gets you a deep dive she presents on the desk.</p>
+  <section id="install">
+    <div class="install">
+      <p class="eyebrow">Install — thirty seconds to air</p>
+      <div class="cmd"><code><span class="p">curl</span> -fsSL pepper.software | <span class="p">sh</span></code><button class="copy" data-cmd="curl -fsSL pepper.software | sh">Copy</button></div>
+      <div class="cmd"><code><span class="p">pepper</span> start</code><button class="copy" data-cmd="pepper start">Copy</button></div>
+      <p class="alt">Prefer npm? <code>npm i -g @pepperchan/pepper</code> · Node 18.17+ · everything lives in <code>~/.pepper</code> · her voice tier: <code>pepper voice install</code></p>
     </div>
   </section>
 
-  <section class="quote">
-    <p>"Pepper reads the singularity so you don't doomscroll it."</p>
-    <span>— her own tagline, and she stands by it</span>
+  <section>
+    <div class="cols">
+      <div class="col"><span class="n">01</span><h3>Tell her your beats</h3><p>"Watch open-source robotics and GPU prices for me." Plain words in her studio — she works out the rest and starts sweeping the wire every fifteen minutes.</p></div>
+      <div class="col"><span class="n">02</span><h3>She writes the bulletin</h3><p>An on-device model turns the wire into a sourced broadcast — vendor claims labeled, rumors kept off the air, nothing invented. Your reading interests never leave the machine.</p></div>
+      <div class="col"><span class="n">03</span><h3>She goes on air</h3><p>A 3D newsroom in your browser: chyron, ticker, her designed voice, deep-dive reports on demand — and a one-command export that puts your station on the public web.</p></div>
+    </div>
   </section>
 
-  <section class="grid">
-    <div class="card"><h3>🧠 Fully on-device</h3><p>Apple Foundation Models on Apple Silicon; your own Ollama / LM Studio anywhere else; an honest headlines-only mode everywhere. Your reading interests never leave the machine.</p></div>
-    <div class="card"><h3>💬 Conversational desk</h3><p>"watch quantum computing" · "drop robotics" · "research the AISI evaluations" — the desk understands intent, does the work, and presents the answer on air.</p></div>
-    <div class="card"><h3>🗣 Hey Siri, ask Pepper</h3><p>On macOS 27, a one-minute Shortcut connects Siri AI to her deep-research pipeline — dictate a question, she files a report. <a href="https://github.com/bunnycompany/pepper/blob/main/docs/SIRI.md">Recipe →</a></p></div>
-    <div class="card"><h3>👤 Her face is yours to choose</h3><p>A built-in anchor out of the box, or drop any VRM avatar at <code>~/.pepper/avatar.vrm</code> and she wears it — blinks, lip-sync and all.</p></div>
-    <div class="card"><h3>📡 Broadcast to the world</h3><p><code>pepper export</code> emits a static site of her latest shows — host it on any static host and visitors watch her present, speech synthesized in their own browser.</p></div>
-    <div class="card"><h3>📏 Benchmarked honesty</h3><p>Her models must pass <a href="https://github.com/bunnycompany/pepper/blob/main/bench/README.md">MoltBench</a> — grounding, attribution, rumor-handling — before release. The first one failed; that's why the gate exists.</p></div>
+  <section class="bench">
+    <div class="bench-grid">
+      <div>
+        <p class="eyebrow">Benchmarked, not vibes</p>
+        <h2>Her model beat one 3.5× its size — on a public benchmark.</h2>
+        <p class="lede">MoltBench scores wire-to-report work: grounding, attribution, and adjudication of deliberately contaminated bundles, under blind judges. Pepper's first model <em>failed</em> it — that failure became the release gate. Her current desk model cleared it. <a href="https://github.com/bunnycompany/pepper/tree/main/bench">Protocol and bundles →</a></p>
+      </div>
+      <table>
+        <thead><tr><th>Model</th><th>Blind wins</th><th>Grounding</th></tr></thead>
+        <tbody>
+          <tr class="hers"><td>pepper-desk-e2b (2B)</td><td>11/12</td><td>88.6%</td></tr>
+          <tr><td>Qwen2.5-7B (base)</td><td>1/12</td><td>77.5%</td></tr>
+          <tr><td>pepper-7b (persona)</td><td>0/12</td><td>50.0%</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
-  <div class="ticker"><span>MNN — ALL YOUR MODELS, ALL THE TIME · SWEEPS GOOGLE NEWS + HACKER NEWS + ARXIV, KEYLESSLY · WRITES BULLETINS ON-DEVICE · DEEP DIVES ON REQUEST · RUNS 24/7 VIA LAUNCHD · AGPL-3.0 · THE DESK NEVER CLOSES ·&nbsp;</span></div>
+  <section class="deploy">
+    <p class="eyebrow">Run a station of your own</p>
+    <h2>Three ways to put a Pepper on the web.</h2>
+    <div class="path"><b>Watch this one</b><p>The reference station at <a style="color:var(--accent);text-decoration:none" href="https://pepper.watch">pepper.watch</a> — served static from Cloudflare Pages, her voice included.</p></div>
+    <div class="path"><b>Export yours</b><p>Run Pepper locally, then <code>pepper export</code> → <code>npx wrangler pages deploy pepper-site</code>. Your beats, your bulletins, your voice files — a complete station from your own desk.</p></div>
+    <div class="path"><b>One-click start</b><p>Deploy the station template straight to your Cloudflare account, then feed it from your desk whenever you like.<br>
+      <a class="deploy-btn" href="https://deploy.workers.cloudflare.com/?url=https://github.com/bunnycompany/pepper-station"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a></p></div>
+  </section>
 
   <footer>
-    <p>Pepper is an open-source AI anchor persona — software with a character, not a person; MNN is her fictional network. Full experience: Apple Silicon Mac with Apple Intelligence. Every machine gets the newsroom, the wire, and the honest fallback.</p>
-    <p style="margin-top:8px">AGPL-3.0 · <a href="https://github.com/bunnycompany/pepper">github.com/bunnycompany/pepper</a> · <a href="https://pepper.company">MNN</a> · <a href="https://pepper.ceo">Pepper</a></p>
+    <div class="links">
+      <a href="https://github.com/bunnycompany/pepper">GitHub</a>
+      <a href="https://huggingface.co/pepper-research">Hugging Face</a>
+      <a href="https://pepper.watch">Live desk</a>
+      <a href="https://pepper.company">MNN</a>
+      <a href="https://pepper.ceo">About Pepper</a>
+    </div>
+    <p>Pepper is an open-source AI anchor — software with a persona, not a person. Her voices are designed, no human cloned; her reports name their sources; her models pass a public benchmark before release. AGPL-3.0, by <a href="https://github.com/bunnycompany">bunnycompany</a>. 🌶</p>
   </footer>
 </div>
 <script>
   for (const b of document.querySelectorAll('.copy')) {
     b.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(b.dataset.cmd); b.textContent = 'COPIED'; setTimeout(() => { b.textContent = 'COPY'; }, 1600); } catch {}
+      try { await navigator.clipboard.writeText(b.dataset.cmd); b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1400); } catch {}
     });
   }
 </script>

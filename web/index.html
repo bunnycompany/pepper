@@ -76,12 +76,13 @@
 
     <section class="panel-section" id="sec-voice">
       <h3>Voice</h3>
+      <p class="row" id="voice-active" hidden>🌶 <b>Her own voice</b> — <span id="voice-identity"></span>, rendered on this desk. The picker below is only the fallback.</p>
       <label class="row check">
         <input type="checkbox" id="voice-enabled">
         <span>Read bulletins aloud</span>
       </label>
       <label class="row">
-        <span class="row-label">Voice</span>
+        <span class="row-label" id="voice-select-label">Fallback voice</span>
         <select id="voice-select"></select>
       </label>
       <label class="row">

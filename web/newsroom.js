@@ -117,7 +117,26 @@ window.newsroom = {
   pulseBreaking: safe(pulseBreaking),
   gesture: safe(gesture),
   cut: safe(cut),
+  setWireStats: safe(setWireStats),
 };
+
+// Real wire data replaces the decorative random walk the moment it arrives.
+function setWireStats(stats) {
+  const s = stats || {};
+  if (Array.isArray(s.beats) && s.beats.length) {
+    const counts = s.beats.map((b) => Math.max(0, Number(b.count) || 0));
+    const max = Math.max(1, ...counts);
+    S.wire.bars = counts.map((c) => 0.12 + 0.85 * (c / max));
+    S.wire.beatNames = s.beats.map((b) => String(b.name || '').slice(0, 12));
+  }
+  if (Number.isFinite(s.perHour)) {
+    S.wire.perHour = Math.max(0, Math.round(s.perHour));
+    S.wire.spark.push(Math.min(1, 0.15 + (S.wire.perHour / Math.max(60, S.wire.perHour * 1.4))));
+    if (S.wire.spark.length > 48) S.wire.spark.shift();
+  }
+  S.wire.real = true;
+  drawRight();
+}
 
 function setOnAir(on) { S.onAir = !!on; }
 
@@ -884,9 +903,24 @@ async function loadVRMAvatar() {
   } catch { /* optional */ }
   try { if (typeof VRMUtils.rotateVRM0 === 'function') VRMUtils.rotateVRM0(vrm); } catch { /* optional */ }
 
+  // She signs on, she doesn't pop in: collect materials and fade her up
+  // over ~0.9s once she's seated (ramp driven from the animate loop).
+  const fadeMats = [];
   vrm.scene.traverse((obj) => {
-    if (obj.isMesh) { obj.castShadow = true; obj.frustumCulled = false; }
+    if (obj.isMesh) {
+      obj.castShadow = true;
+      obj.frustumCulled = false;
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      for (const m of mats) {
+        if (!m) continue;
+        fadeMats.push({ m, opacity: m.opacity != null ? m.opacity : 1, transparent: !!m.transparent });
+        m.transparent = true;
+        m.opacity = 0;
+        m.depthWrite = true;
+      }
+    }
   });
+  S.avatarFade = { t: 0, dur: 0.9, mats: fadeMats };
 
   S.vrm = vrm;
   S.vrmB = poseVRMSeated(vrm);
@@ -1176,6 +1210,9 @@ function drawLeft() {
 
 function stepWire() {
   const wr = S.wire;
+  // Once real sweep data arrives (setWireStats), the decorative random walk
+  // stands down — the wall shows actual signal, held steady between sweeps.
+  if (wr.real) return;
   for (let i = 0; i < wr.bars.length; i++) {
     wr.bars[i] = clamp(wr.bars[i] + rand(-0.16, 0.16), 0.08, 1);
   }
@@ -1196,7 +1233,9 @@ function drawRight() {
   ctx.fillStyle = '#ffffff';
   ctx.font = F(800, 20);
   ctx.fillText('LIVE', 270, 50);
-  const total = Math.round(S.wire.bars.reduce((a, b) => a + b, 0) * 137);
+  const total = S.wire.real && Number.isFinite(S.wire.perHour)
+    ? S.wire.perHour
+    : Math.round(S.wire.bars.reduce((a, b) => a + b, 0) * 137);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#35d6ff';
   ctx.font = F(300, 54);
@@ -1575,6 +1614,21 @@ function animate() {
   const dt = Math.min(S.clock.getDelta(), 0.05);
   S.time += dt;
   try {
+    if (S.avatarFade) {
+      const f = S.avatarFade;
+      f.t += dt;
+      const k = Math.min(1, f.t / f.dur);
+      const ease = k * k * (3 - 2 * k);
+      for (const { m, opacity } of f.mats) m.opacity = opacity * ease;
+      if (k >= 1) {
+        // Restore original material transparency so MToon sorting is clean.
+        for (const { m, opacity, transparent } of f.mats) {
+          m.opacity = opacity;
+          m.transparent = transparent;
+        }
+        S.avatarFade = null;
+      }
+    }
     stepTweens(dt);
     updateTalk(dt);
     updateBlink(dt);

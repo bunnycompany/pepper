@@ -106,6 +106,36 @@ function topicName(slug) {
   return t ? t.name : null;
 }
 
+/* ---------- real wire stats → the studio's WIRE ACTIVITY wall ---------- */
+
+function pushWireStats() {
+  try {
+    const beats = state.topics.filter((t) => !t.muted).map((t) => ({
+      name: t.name,
+      count: state.freshBySlug.get(t.slug) || 0,
+    }));
+    const fresh = beats.reduce((a, b) => a + b.count, 0);
+    const perHour = Math.round(fresh * (60 / Math.max(3, state.intervalMinutes || 15)));
+    // Until the first sweep reports real counts, the wall keeps its
+    // decorative animation — an all-zero chart on boot reads as broken.
+    if (!beats.length || fresh === 0) return;
+    N.setWireStats({ beats, perHour });
+  } catch { /* decorative wall keeps animating */ }
+}
+
+// The truth line in the voice panel: her rendered voice vs browser fallback.
+function updateVoicePanel(bulletin) {
+  if (!els.voiceActive) return;
+  const hers = !!(bulletin && bulletin.audio);
+  els.voiceActive.hidden = !hers;
+  if (hers && els.voiceIdentity) {
+    els.voiceIdentity.textContent = (state.voiceIdentity || 'bright-anchor');
+  }
+  if (els.voiceSelectLabel) {
+    els.voiceSelectLabel.textContent = hers ? 'Fallback voice' : 'Voice';
+  }
+}
+
 /* ---------- chyron ---------- */
 
 let typeToken = 0;
@@ -415,6 +445,7 @@ const SHOTS = ['med', 'close', 'screen', 'close'];
 
 async function playBulletin(b, { replay = false } = {}) {
   if (!b || !Array.isArray(b.segments)) return;
+  updateVoicePanel(b);
   const my = ++state.playToken;
   clearIdle();
   state.playing = true;
@@ -770,6 +801,7 @@ function connectSSE() {
     state.sweepText = 'sweeping: ' + ((d && (d.topic || d.slug)) || '…');
     if (d && d.slug != null) state.freshBySlug.set(d.slug, d.fresh || 0);
     renderTopics();
+    pushWireStats();
   });
 
   on('ticker', (d) => renderTicker((d && d.items) || []));
@@ -879,6 +911,8 @@ function bubble(kind, text) {
 async function bootStudio(st) {
   state.mode = 'studio';
   document.body.classList.add('mode-studio');
+  state.intervalMinutes = st.intervalMinutes || 15;
+  state.voiceIdentity = (st.voice && st.voice.identity) || 'bright-anchor';
   if (st.site) state.site = { ...state.site, ...st.site };
   document.title = state.site.title;
   setPill('live');
@@ -933,6 +967,16 @@ async function bootBroadcast(data) {
   // Populate the TOPIC WATCH wall before anything plays — visitors should
   // never see the boot-time "no beats" placeholder on a public station.
   N.showIdle({ topics: state.topics.map((t) => t.name) });
+  // Real wire numbers for the wall, derived from the exported snapshot.
+  try {
+    const tk = Array.isArray(data.ticker) ? data.ticker : ((data.ticker && data.ticker.items) || []);
+    const counts = new Map();
+    for (const it of tk) counts.set(it.topic, (counts.get(it.topic) || 0) + 1);
+    const beats = state.topics.map((t) => ({ name: t.name, count: counts.get(t.name) || 0 }));
+    const newestB = bulletins[0];
+    const perHour = newestB && newestB.stats ? Math.round((newestB.stats.freshItems || 0) * 4) : tk.length;
+    if (beats.some((b) => b.count > 0)) N.setWireStats({ beats, perHour });
+  } catch { /* wall stays decorative */ }
   state.booted = 'broadcast';
   // If JOIN was clicked while broadcast.json was still downloading, the join
   // handler deferred to us — start the show now.
@@ -1005,6 +1049,9 @@ function cacheEls() {
   els.historyList = $('#history-list');
   els.voiceEnabled = $('#voice-enabled');
   els.voiceSelect = $('#voice-select');
+  els.voiceActive = $('#voice-active');
+  els.voiceIdentity = $('#voice-identity');
+  els.voiceSelectLabel = $('#voice-select-label');
   els.voiceRate = $('#voice-rate');
   els.rateVal = $('#rate-val');
   els.askLog = $('#ask-log');
