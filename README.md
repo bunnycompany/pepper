@@ -137,8 +137,10 @@ mlx_lm.server --model <pepper-model-dir> --port 8080
 
 then point her `brain.local.url` at `http://localhost:8080` and the desk runs
 on her own distilled voice. A smaller singularity-desk specialist build is in
-progress; weights land on Hugging Face once they pass the desk's own
-truth-parsing benchmark.
+progress. The first release is live:
+[pepper-research/pepper-desk-e2b](https://huggingface.co/pepper-research/pepper-desk-e2b)
+— an on-device 2B that beat a 7B on MoltBench (11/12 blind wins, 88.6%
+grounding); scores and protocol in [bench/](bench/).
 
 On the roadmap alongside it: her real voice. Pepper ships **three designed
 voice identities** — `bright-anchor`, `calm-pro`, and `vtuber-spark`, golden

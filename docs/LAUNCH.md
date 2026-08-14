@@ -31,7 +31,7 @@ sites by re-running `pepper export` + `wrangler pages deploy`.
    with judges confirming persona + adjudication quality. Publish the run
    (bundles, outputs, scores) in `bench/`.
 3. **Model day** — push `pepper-desk-e2b` (+ `pepper-7b` as the persona
-   model) to Hugging Face under bunnycompany with the model card + bench
+   model) to Hugging Face under pepper-research with the model card + bench
    receipts; update README + pepper.software with the HF links.
 4. **Announce** — thread from @pepper_research (drafts in
    `docs/launch/TWEETS.md`), HN Show HN, and a bulletin where Pepper covers
