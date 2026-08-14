@@ -111,6 +111,7 @@ function helpText() {
     '    now                           sweep the wire right now',
     '    brief ' + d('[--json|--speak]') + '        latest bulletin, right in the terminal',
     '    ask <question…>               ask Pepper about her beats',
+    '    research <question…>          deep dive: multi-angle sweep → desk report',
     '    export ' + d('[--out dir]') + '            static broadcast site (Cloudflare Pages ready)',
     '    doctor                        studio health check',
     '    daemon install|uninstall|status',
@@ -421,6 +422,37 @@ async function cmdBrief() {
   }
 }
 
+async function cmdResearch() {
+  const q = args.slice(1).join(' ').trim();
+  if (!q) {
+    console.log('  usage: pepper research <question…>');
+    process.exitCode = 1;
+    return;
+  }
+  const { runDeepResearch } = await import('../src/deepresearch.js');
+  console.log('');
+  console.log('  🌶 ' + c.bold('deep dive') + c.dim(' — ' + q));
+  const t0 = Date.now();
+  const r = await runDeepResearch(q, {
+    emit: (type, d) => {
+      if (type === 'research-angles') console.log(c.dim('  angles: ' + d.angles.join(' · ')));
+      if (type === 'research-sweep') console.log(c.dim('  sweeping: ' + d.query));
+      if (type === 'research-swept') console.log(c.dim(`  ${d.items} items on the wire`));
+    },
+  });
+  console.log('');
+  if (flags.json) {
+    console.log(JSON.stringify(r, null, 2));
+  } else {
+    if (r.notes) console.log(c.dim('  DESK NOTES: ' + r.notes) + '\n');
+    for (const line of wrapText(r.report, 78)) console.log('  ' + line);
+    console.log('');
+    console.log(c.dim(`  ${r.items} sources · ${((Date.now() - t0) / 1000).toFixed(0)}s · filed as ${r.bulletinId} — she'll present it in the studio`));
+  }
+  console.log('');
+  setTimeout(() => process.exit(process.exitCode || 0), 300).unref();
+}
+
 async function cmdAsk() {
   const q = args.slice(1).join(' ').trim();
   if (!q) {
@@ -502,6 +534,7 @@ async function main() {
     case 'now': await cmdNow(); break;
     case 'brief': await cmdBrief(); break;
     case 'ask': await cmdAsk(); break;
+    case 'research': await cmdResearch(); break;
     case 'export': await cmdExport(); break;
     case 'doctor':
       await doctor();

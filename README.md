@@ -60,6 +60,7 @@ within seconds and goes on air with her first bulletin.
 | `pepper now` | Run a sweep immediately |
 | `pepper brief [--json\|--speak]` | Latest bulletin in the terminal (`--speak` uses macOS `say`) |
 | `pepper ask <question>` | Ask Pepper about what she's tracking |
+| `pepper research <question>` | Deep dive: multi-angle sweep → on-device desk report, filed as a bulletin ([Siri bridge](docs/SIRI.md)) |
 | `pepper export [--out dir]` | Export the static broadcast site |
 | `pepper doctor` | Check node, brain, home dir, port, daemon |
 | `pepper daemon install\|uninstall\|status` | Run 24/7 via launchd (macOS) |

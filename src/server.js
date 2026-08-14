@@ -284,6 +284,24 @@ export function createPepperServer(opts = {}) {
         return jsonRes(res, 202, { started: true });
       }
 
+      if (p === '/api/research' && req.method === 'POST') {
+        const { q } = await readBody(req);
+        if (!q || !String(q).trim()) return jsonRes(res, 400, { error: 'q required' });
+        const { runDeepResearch } = await import('./deepresearch.js');
+        // Long-running; fire it and let SSE narrate. The bulletin event
+        // arrives through the same channel the studio already listens to.
+        runDeepResearch(String(q).trim(), {
+          emit: (type, data) => {
+            sseSend(type, data);
+            if (type === 'research-done') {
+              state.latestBulletinId = data.id;
+              sseSend('bulletin', { id: data.id });
+            }
+          },
+        }).catch((e) => log.err('deep research failed:', e.message));
+        return jsonRes(res, 202, { started: true });
+      }
+
       if (p === '/api/ask' && req.method === 'POST') {
         const { q } = await readBody(req);
         if (!q || !String(q).trim()) return jsonRes(res, 400, { error: 'q required' });
