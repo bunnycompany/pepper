@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pepper — your 24/7 on-device research anchor</title>
+<meta name="description" content="Install Pepper: an open-source AI news anchor that tracks your topics, writes bulletins fully on-device, and reads them from a 3D newsroom.">
+<style>
+  :root { --red: #e02020; --bg: #070d18; --panel: #0d1626; --ink: #eef2f8; --dim: #8b97ab; --cyan: #35d6ff; }
+  * { margin: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 56px 0 8px; }
+  .logo { display: inline-block; background: var(--red); color: #fff; font-weight: 900; font-size: 28px; letter-spacing: 1px; padding: 6px 16px; border-radius: 6px; font-style: italic; }
+  .logo small { display: block; font-size: 10px; letter-spacing: 2px; font-style: normal; font-weight: 700; opacity: .9; }
+  h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 900; line-height: 1.15; margin: 24px 0 12px; }
+  h1 em { color: var(--red); font-style: normal; }
+  .tag { color: var(--dim); font-size: 18px; max-width: 620px; }
+  .shot { width: 100%; border-radius: 12px; border: 1px solid #1c2a42; margin: 36px 0 8px; display: block; }
+  .cap { color: var(--dim); font-size: 13px; text-align: center; margin-bottom: 24px; }
+  .install { background: var(--panel); border: 1px solid #1c2a42; border-radius: 12px; padding: 24px; margin: 24px 0; }
+  .install h2 { font-size: 14px; letter-spacing: 2px; color: var(--cyan); margin-bottom: 14px; }
+  pre { background: #060a12; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font: 14px/1.7 ui-monospace, "SF Mono", Menlo, monospace; color: #d7e3f4; }
+  pre b { color: var(--cyan); font-weight: 400; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 36px 0; }
+  .card { background: var(--panel); border: 1px solid #1c2a42; border-radius: 12px; padding: 20px; }
+  .card h3 { font-size: 16px; margin-bottom: 8px; }
+  .card p { color: var(--dim); font-size: 14px; }
+  .links { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 48px; }
+  .links a { color: var(--ink); background: var(--panel); border: 1px solid #1c2a42; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .links a.hot { background: var(--red); border-color: var(--red); }
+  .links a:hover { border-color: var(--cyan); }
+  footer { border-top: 1px solid #1c2a42; padding: 28px 0 48px; color: var(--dim); font-size: 13px; }
+  footer a { color: var(--dim); }
+  .ticker { overflow: hidden; white-space: nowrap; border-block: 1px solid #1c2a42; padding: 8px 0; margin-top: 40px; color: var(--dim); font-size: 13px; letter-spacing: 1px; }
+  .ticker span { display: inline-block; animation: t 30s linear infinite; }
+  @keyframes t { from { transform: translateX(20%); } to { transform: translateX(-100%); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo">MNN<small>MODEL NEWS NETWORK</small></span>
+    <h1>Pepper reads the singularity <em>so you don't doomscroll it.</em></h1>
+    <p class="tag">A 24/7 research anchor that runs on <b>your</b> machine. She tracks the topics you assign, sweeps the public wire, writes the bulletin with an on-device model, and reads it to you from a 3D newsroom. No API keys. No cloud. No telemetry.</p>
+  </header>
+
+  <img class="shot" src="studio.png" alt="Pepper live at the MNN research desk">
+  <p class="cap">Live from the research desk — her studio runs in your browser at localhost:4747.</p>
+
+  <div class="install">
+    <h2>INSTALL — 30 SECONDS TO AIR</h2>
+    <pre><b>npm</b> i -g @bunnycompany/pepper
+<b>pepper</b> add "on-device AI"
+<b>pepper</b> start</pre>
+  </div>
+
+  <div class="grid">
+    <div class="card"><h3>🧠 On-device brain</h3><p>Apple Foundation Models on Apple Silicon; any local OpenAI-compatible server (Ollama, LM Studio) elsewhere; honest headlines-only fallback everywhere. Nothing she reads leaves your machine.</p></div>
+    <div class="card"><h3>📺 3D newsroom</h3><p>Chyron, ticker, ON AIR sign, coffee mug. Drop a VRM avatar at ~/.pepper/avatar.vrm and she wears it, blinks, and lip-syncs.</p></div>
+    <div class="card"><h3>🌶 Truth discipline</h3><p>Sources named on air, rumor never laundered into fact, and a public benchmark (MoltBench) that her own models must pass before release.</p></div>
+  </div>
+
+  <div class="links">
+    <a class="hot" href="https://pepper.watch">Watch her live desk →</a>
+    <a href="https://github.com/bunnycompany/pepper">GitHub (AGPL-3.0)</a>
+    <a href="https://github.com/bunnycompany/pepper/blob/main/bench/README.md">MoltBench</a>
+    <a href="https://pepper.ceo">Meet Pepper</a>
+  </div>
+
+  <div class="ticker"><span>MNN — ALL YOUR MODELS, ALL THE TIME · TRACKS BEATS KEYLESSLY: GOOGLE NEWS RSS + HACKER NEWS + ARXIV · WRITES BULLETINS FULLY ON-DEVICE · EXPORTS A STATIC BROADCAST SITE · RUNS 24/7 VIA LAUNCHD · THE DESK NEVER CLOSES ·&nbsp;</span></div>
+
+  <footer>
+    <p>Pepper is an open-source AI anchor persona — software, not a person; a fictional network, not a real broadcaster. Requires Node 18.17+. Full experience needs an Apple Silicon Mac with Apple Intelligence; every machine gets the newsroom.</p>
+    <p style="margin-top:8px">AGPL-3.0 · <a href="https://github.com/bunnycompany/pepper">bunnycompany/pepper</a> · <a href="https://pepper.company">MNN</a></p>
+  </footer>
+</div>
+</body>
+</html>
