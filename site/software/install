@@ -1,0 +1,27 @@
+#!/bin/sh
+# Pepper installer — https://pepper.software
+# Installs @pepperchan/pepper globally via npm. AGPL-3.0.
+set -e
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "Pepper needs Node.js 18.17+."
+  echo "Get it from https://nodejs.org — or on a Mac: brew install node"
+  exit 1
+fi
+
+major=$(node -e 'console.log(process.versions.node.split(".")[0])')
+if [ "$major" -lt 18 ]; then
+  echo "Your Node.js is v$(node -v | tr -d v) — Pepper needs 18.17 or newer."
+  exit 1
+fi
+
+echo "Installing @pepperchan/pepper…"
+npm install -g @pepperchan/pepper
+
+echo ""
+echo "🌶 Pepper is in. Put her on the desk:"
+echo ""
+echo "    pepper start"
+echo ""
+echo "Her studio opens at http://localhost:4747 — she'll introduce herself"
+echo "and ask what you care about. Plain words are fine."

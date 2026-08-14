@@ -17,9 +17,11 @@ run your own: pepper.software
 **2/**
 she's open source (AGPL-3.0) and installs in 30 seconds:
 
-npm i -g @pepperchan/pepper
-pepper add "on-device AI"
+curl -fsSL pepper.software | sh
 pepper start
+
+(or: npm i -g @pepperchan/pepper) — then just tell her what you care
+about, in plain words, and she sets up her own desk.
 
 Apple Foundation Models on Apple Silicon, your own Ollama/LM Studio anywhere
 else, honest headlines-only mode on anything that runs Node.
