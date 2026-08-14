@@ -245,6 +245,7 @@ function setVoiceOn(on) {
   els.voiceEnabled.checked = state.voiceOn;
   if (!on) {
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch {}
+    stopLineAudio();
   }
 }
 
@@ -292,6 +293,92 @@ async function speakLine(text, token = null) {
   await sleep(180);
 }
 
+/* ---------- her real voice: rendered audio files ---------- */
+
+/* When the server has rendered a bulletin with Pepper's cloned voice
+   (bulletin.audio === true), each line prefers its WAV over browser TTS:
+     ./audio/<bulletinId>/open.wav
+     ./audio/<bulletinId>/handoff-<segIdx>.wav   (only where segment.handoff)
+     ./audio/<bulletinId>/<segIdx>-<lineIdx>.wav
+     ./audio/<bulletinId>/signoff.wav
+   URLs are relative, so the same scheme works against the studio server and
+   on the exported static broadcast site. Any file that is missing or fails
+   to play falls back to the speakLine TTS path for that line only. */
+
+let currentAudio = null; // { el, finish } for the line playing right now
+
+function stopLineAudio() {
+  const a = currentAudio;
+  if (!a) return;
+  currentAudio = null;
+  try { a.el.pause(); } catch {}
+  a.finish(true); // deliberate stop — settle the line, no TTS fallback
+}
+
+function playAudioFile(url, text) {
+  // Resolves true when playback completed (or was deliberately stopped, or
+  // the guard cap expired), false when the file failed to load or play —
+  // the caller falls back to TTS only on false.
+  return new Promise((resolve) => {
+    let done = false;
+    let guard = null;
+    let el = null;
+    const finish = (ok) => {
+      if (done) return;
+      done = true;
+      clearTimeout(guard);
+      if (currentAudio && currentAudio.el === el) currentAudio = null;
+      if (el) { try { el.pause(); } catch {} }
+      resolve(ok);
+    };
+    try {
+      el = new Audio();
+      currentAudio = { el, finish };
+      el.preload = 'auto';
+      el.addEventListener('ended', () => finish(true));
+      el.addEventListener('error', () => finish(false));
+      el.addEventListener('loadedmetadata', () => {
+        // Real duration known — tighten the guard to max(8s, duration × 2).
+        if (done || !Number.isFinite(el.duration) || el.duration <= 0) return;
+        clearTimeout(guard);
+        guard = setTimeout(() => finish(true), Math.max(8000, el.duration * 2000));
+      });
+      guard = setTimeout(() => finish(true), Math.max(8000, String(text || '').length * 130));
+      el.src = url;
+      const p = el.play();
+      if (p && typeof p.catch === 'function') p.catch(() => finish(false));
+    } catch {
+      finish(false);
+    }
+  });
+}
+
+async function playLineAudio(url, text, token = null) {
+  if (text == null) return;
+  const clean = String(text).trim();
+  if (!clean) return;
+  // Muted → the same silently-timed path the TTS route takes.
+  if (!state.voiceOn) return speakLine(clean, token);
+  typeOn(clean);
+  N.setTalking(true);
+  let ok = false;
+  try {
+    ok = await playAudioFile(url, clean);
+  } finally {
+    // Same guard as speakLine: a superseded playback's line must not shut
+    // the mouth of the one that replaced it.
+    if (token == null || token === state.playToken) N.setTalking(false);
+  }
+  if (!ok) {
+    // Missing or broken file. Fall back to TTS for this line — unless this
+    // playback was superseded, where speaking would talk over its successor.
+    if (token != null && token !== state.playToken) return;
+    await speakLine(clean, token);
+    return;
+  }
+  await sleep(180);
+}
+
 /* ---------- player ---------- */
 
 function setPill(kind) {
@@ -320,6 +407,7 @@ function playNow(b, opts = {}) {
   clearIdle();
   state.queue.length = 0;
   try { window.speechSynthesis && speechSynthesis.cancel(); } catch {}
+  stopLineAudio();
   playBulletin(b, { replay: true, ...opts });
 }
 
@@ -331,6 +419,12 @@ async function playBulletin(b, { replay = false } = {}) {
   clearIdle();
   state.playing = true;
   setPill(replay || state.mode === 'broadcast' ? 'replay' : 'live');
+  // Rendered-voice bulletins (audio: true) prefer their per-line WAVs; every
+  // other bulletin — and every line whose file fails — uses browser TTS.
+  const hasAudio = b.audio === true && b.id;
+  const say = (text, name) => (hasAudio
+    ? playLineAudio('./audio/' + encodeURIComponent(b.id) + '/' + name + '.wav', text, my)
+    : speakLine(text, my));
   try {
     N.setMood('steady');
     N.setOnAir(true);
@@ -340,13 +434,14 @@ async function playBulletin(b, { replay = false } = {}) {
       kicker: replay ? 'REPLAY · recorded ' + hhmm(b.at) : 'MNN LIVE',
       headline: state.site.title,
     });
-    await speakLine(b.open, my);
+    await say(b.open, 'open');
     if (my !== state.playToken) return;
 
-    for (const seg of b.segments) {
+    for (let i = 0; i < b.segments.length; i++) {
+      const seg = b.segments[i];
       if (my !== state.playToken) return;
       if (seg.handoff) {
-        await speakLine(seg.handoff, my);
+        await say(seg.handoff, 'handoff-' + i);
         if (my !== state.playToken) return;
       }
       N.setMood(seg.mood);
@@ -368,7 +463,7 @@ async function playBulletin(b, { replay = false } = {}) {
       for (let j = 0; j < script.length; j++) {
         if (my !== state.playToken) return;
         if (j > 0) N.cut(SHOTS[j % SHOTS.length]);
-        await speakLine(script[j], my);
+        await say(script[j], i + '-' + j);
       }
     }
 
@@ -376,7 +471,7 @@ async function playBulletin(b, { replay = false } = {}) {
     N.setMood('steady');
     N.cut('med');
     setChyron({ kicker: 'MNN', headline: state.site.tagline || 'All your models. All the time.' });
-    await speakLine(b.signoff, my);
+    await say(b.signoff, 'signoff');
     if (my !== state.playToken) return;
     N.gesture('shuffle');
     await sleep(700);
@@ -693,6 +788,23 @@ function connectSSE() {
       refreshHistory();
     } catch (e) {
       toast('Could not fetch the new bulletin: ' + e.message);
+    }
+  });
+
+  // The voice worker finished rendering a bulletin's WAVs after we queued it.
+  // If it is still waiting its turn, swap in the voiced copy so it plays with
+  // her real voice instead of browser TTS. Already-playing bulletins are left
+  // alone — restarting mid-show would be worse than finishing unvoiced.
+  on('audio-ready', async (d) => {
+    if (!d || !d.id) return;
+    if (!state.queue.some((x) => x.id === d.id)) return;
+    try {
+      const b = await fetchJSON('./api/bulletins/' + encodeURIComponent(d.id));
+      // Re-find after the await — the queue may have shifted meanwhile.
+      const at = state.queue.findIndex((x) => x.id === d.id);
+      if (at !== -1) state.queue[at] = b;
+    } catch (e) {
+      console.warn('[ui] audio-ready refetch failed:', e);
     }
   });
 

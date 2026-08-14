@@ -135,6 +135,22 @@ export function createPepperServer(opts = {}) {
     });
   }
 
+  // Her real voice: render a filed bulletin's lines to WAVs in background,
+  // then tell clients. No-ops harmlessly when the voice tier isn't installed.
+  async function renderVoice(bulletinId) {
+    try {
+      const { getVoicebox } = await import('./voicebox.js');
+      const vb = getVoicebox();
+      if (!vb.available()) return;
+      const b = store.getBulletin(bulletinId);
+      if (!b || b.audio) return;
+      const ok = await vb.renderBulletin(b, { emit: sseSend });
+      if (ok) sseSend('audio-ready', { id: bulletinId });
+    } catch (e) {
+      log.warn('voice render skipped:', e.message);
+    }
+  }
+
   async function doCycle(trigger = 'schedule') {
     if (state.researching) return false;
     state.researching = true;
@@ -144,7 +160,10 @@ export function createPepperServer(opts = {}) {
       const { research } = await mods();
       const summary = await research.runCycle({
         emit: (type, data) => {
-          if (type === 'bulletin') state.latestBulletinId = data.id;
+          if (type === 'bulletin') {
+            state.latestBulletinId = data.id;
+            renderVoice(data.id);
+          }
           sseSend(type, data);
         },
       });
@@ -324,6 +343,7 @@ export function createPepperServer(opts = {}) {
             sseSend(type, data);
             if (type === 'research-done') {
               state.latestBulletinId = data.id;
+              renderVoice(data.id);
               sseSend('bulletin', { id: data.id });
             }
           },
@@ -339,6 +359,12 @@ export function createPepperServer(opts = {}) {
         return answer
           ? jsonRes(res, 200, answer)
           : jsonRes(res, 503, { error: 'no brain available' });
+      }
+
+      if (p.startsWith('/audio/')) {
+        const rel = normalize(decodeURIComponent(p.slice('/audio/'.length)));
+        if (rel.startsWith('..')) { res.writeHead(403); return res.end(); }
+        return serveFile(res, join(paths.audioDir, rel), 'public, max-age=3600');
       }
 
       if (p === '/avatar.vrm') return serveFile(res, paths.avatar);

@@ -211,6 +211,19 @@ export async function doctor() {
     else na('avatar', 'no avatar.vrm — the built-in Pepper will present');
   } catch (e) { na('avatar', String(e?.message || e)); }
 
+  // 11. her real voice (local TTS tier)
+  try {
+    const ready = join(home(), 'voice', 'ready');
+    if (!existsSync(ready)) {
+      na('voice', 'browser TTS only — `pepper voice install` for her real voice');
+    } else {
+      let marker = {};
+      try { marker = JSON.parse(readFileSync(ready, 'utf8')) || {}; } catch {}
+      const identity = loadConfig().voice?.identity || 'bright-anchor';
+      ok('voice', identity + ' · ' + (marker.model || 'model unknown'));
+    }
+  } catch (e) { na('voice', String(e?.message || e)); }
+
   console.log('');
   if (problems === 0) console.log('  ' + c.green('all clear') + c.dim(' — the studio is in good shape.'));
   else console.log('  ' + c.yellow(`${problems} problem${problems === 1 ? '' : 's'}`) + c.dim(' — see ✗ above.'));

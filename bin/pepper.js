@@ -1,6 +1,8 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
-import { loadConfig, VERSION } from '../src/config.js';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { loadConfig, home, PKG_ROOT, VERSION } from '../src/config.js';
 import * as store from '../src/store.js';
 import { c } from '../src/log.js';
 import { renderBrief, doctor, discoverServer, wrapText } from '../src/terminal.js';
@@ -116,6 +118,8 @@ function helpText() {
     '    doctor                        studio health check',
     '    daemon install|uninstall|status',
     '                                  keep her on air 24/7 (macOS launchd)',
+    '    voice install|status|uninstall',
+    '                                  her real voice — on-device TTS (Apple Silicon)',
     '    version · help',
     '',
     '  ' + d('MNN — all your models, all the time.'),
@@ -532,6 +536,220 @@ async function cmdDaemon() {
   }
 }
 
+// ---------- voice (her real voice — local TTS tier) ----------
+
+const VOICE_MODEL = 'mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit';
+
+function voicePaths() {
+  const dir = join(home(), 'voice');
+  return {
+    dir,
+    venv: join(dir, 'venv'),
+    venvPython: join(dir, 'venv', 'bin', 'python3'),
+    ready: join(dir, 'ready'),
+    worker: join(PKG_ROOT, 'src', 'voice', 'worker.py'),
+  };
+}
+
+function readVoiceMarker() {
+  try {
+    const m = JSON.parse(readFileSync(voicePaths().ready, 'utf8'));
+    return m && typeof m === 'object' ? m : null;
+  } catch {
+    return null;
+  }
+}
+
+function pythonVersionOf(bin) {
+  try {
+    const r = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 5000 });
+    if (r.status !== 0) return null;
+    const m = ((r.stdout || '') + (r.stderr || '')).match(/Python (\d+)\.(\d+)\.(\d+)/);
+    if (!m) return null;
+    return { major: Number(m[1]), minor: Number(m[2]), version: `${m[1]}.${m[2]}.${m[3]}` };
+  } catch {
+    return null;
+  }
+}
+
+// Prefer explicit Homebrew python3.x binaries (newest first), then whatever
+// `python3` is on PATH. mlx-audio needs >= 3.10 — 3.9 is honestly rejected.
+function findPython() {
+  const candidates = [];
+  try {
+    for (const name of readdirSync('/opt/homebrew/bin')) {
+      const m = name.match(/^python3\.(\d+)$/);
+      if (m) candidates.push({ bin: '/opt/homebrew/bin/' + name, minor: Number(m[1]) });
+    }
+  } catch {}
+  candidates.sort((a, b) => b.minor - a.minor);
+  candidates.push({ bin: 'python3', minor: -1 });
+  for (const cand of candidates) {
+    const v = pythonVersionOf(cand.bin);
+    if (v && v.major === 3 && v.minor >= 10) return { bin: cand.bin, version: v.version };
+  }
+  return null;
+}
+
+// Long installer steps: stream output live so downloads aren't a silent hang,
+// and report the exit honestly.
+function runStep(bin, args, { timeoutMs = 600000 } = {}) {
+  try {
+    const r = spawnSync(bin, args, { stdio: ['ignore', 'inherit', 'inherit'], timeout: timeoutMs });
+    if (r.error) return { ok: false, why: String(r.error.message || r.error) };
+    if (r.signal) return { ok: false, why: 'stopped by signal ' + r.signal };
+    if (r.status !== 0) return { ok: false, why: 'exit code ' + r.status };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, why: String(e?.message || e) };
+  }
+}
+
+async function cmdVoiceInstall() {
+  const vp = voicePaths();
+  if (process.platform !== 'darwin' || process.arch !== 'arm64') {
+    console.log('  ' + c.red('✗') + ' her real voice needs an Apple Silicon Mac — mlx-audio runs on Metal.');
+    console.log('  ' + c.dim('  everywhere else, the newsroom keeps speaking with browser TTS.'));
+    process.exitCode = 1;
+    return;
+  }
+  if (readVoiceMarker()) {
+    console.log('  ' + c.green('✓') + ' her voice is already installed — see ' + c.cyan('pepper voice status') + '.');
+    console.log('  ' + c.dim('  to reinstall from scratch: `pepper voice uninstall` first.'));
+    return;
+  }
+  console.log('');
+  console.log('  🌶 ' + c.bold('pepper voice install') + c.dim(' — her real voice, rendered on this machine'));
+  console.log('');
+
+  const py = findPython();
+  if (!py) {
+    console.log('  ' + c.red('✗') + ' no Python 3.10+ found — mlx-audio needs it (3.9 is too old).');
+    console.log('  ' + c.dim('  `brew install python`, then rerun `pepper voice install`.'));
+    process.exitCode = 1;
+    return;
+  }
+  console.log('  ' + c.green('✓') + ' python ' + py.version + c.dim(' — ' + py.bin));
+
+  try {
+    mkdirSync(vp.dir, { recursive: true });
+  } catch (e) {
+    console.log('  ' + c.red('✗') + ' cannot create ' + vp.dir + ' — ' + String(e?.message || e));
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!existsSync(vp.venvPython)) {
+    console.log('  ' + c.dim('… creating venv at ' + vp.venv));
+    const r = runStep(py.bin, ['-m', 'venv', vp.venv], { timeoutMs: 120000 });
+    if (!r.ok) {
+      console.log('  ' + c.red('✗') + ' venv creation failed (' + r.why + ') — nothing was installed.');
+      process.exitCode = 1;
+      return;
+    }
+  }
+  console.log('  ' + c.green('✓') + ' venv ready');
+
+  console.log('  ' + c.dim('… pip install mlx-audio — a few minutes on first run'));
+  const pip = runStep(vp.venvPython, ['-m', 'pip', 'install', '-q', 'mlx-audio'], { timeoutMs: 600000 });
+  if (!pip.ok) {
+    console.log('  ' + c.red('✗') + ' pip install mlx-audio failed (' + pip.why + ') — voice is NOT ready.');
+    console.log('  ' + c.dim('  fix the pip error above and rerun `pepper voice install`.'));
+    process.exitCode = 1;
+    return;
+  }
+  console.log('  ' + c.green('✓') + ' mlx-audio installed');
+
+  if (existsSync(vp.worker)) {
+    console.log('  ' + c.dim('… warming up ' + VOICE_MODEL + ' — first run downloads the weights'));
+    const warm = runStep(vp.venvPython, [vp.worker, '--model', VOICE_MODEL, '--warmup'], { timeoutMs: 600000 });
+    if (!warm.ok) {
+      console.log('  ' + c.red('✗') + ' model warmup failed (' + warm.why + ') — voice is NOT ready.');
+      console.log('  ' + c.dim('  check the error above (network? disk?), then rerun `pepper voice install`.'));
+      process.exitCode = 1;
+      return;
+    }
+    console.log('  ' + c.green('✓') + ' model warmed up');
+  } else {
+    console.log('  ' + c.yellow('!') + ' voice worker script missing from this package — skipping the warmup.');
+    console.log('  ' + c.dim('  the model will download on her first render instead.'));
+  }
+
+  try {
+    // Record the VENV interpreter (the one that has mlx_audio), not the
+    // system python that created the venv.
+    writeFileSync(vp.ready, JSON.stringify({
+      installedAt: new Date().toISOString(),
+      python: join(vp.venv, 'bin', 'python3'),
+      pythonVersion: py.version,
+      model: VOICE_MODEL,
+    }, null, 2) + '\n');
+  } catch (e) {
+    console.log('  ' + c.red('✗') + ' could not write the ready marker — ' + String(e?.message || e));
+    process.exitCode = 1;
+    return;
+  }
+
+  const identity = loadConfig().voice?.identity || 'bright-anchor';
+  console.log('');
+  console.log('  ' + c.green('✓') + ' ' + c.bold('her voice is ready') + ' — identity ' + c.bold(identity) + c.dim(' (config voice.identity)'));
+  console.log('  ' + c.dim('restart the studio (`pepper start`) — new bulletins render in her own voice.'));
+  console.log('');
+}
+
+function cmdVoiceStatus() {
+  const vp = voicePaths();
+  const marker = readVoiceMarker();
+  const identity = loadConfig().voice?.identity || 'bright-anchor';
+  const refClip = join(PKG_ROOT, 'voices', identity + '.wav');
+  console.log('');
+  if (!marker) {
+    console.log('  🌶 ' + c.dim('her real voice is not installed — browser TTS carries the desk.'));
+    console.log('     ' + c.dim('install it with `pepper voice install` (Apple Silicon).'));
+    console.log('');
+    return;
+  }
+  console.log('  🌶 ' + c.green(c.bold('VOICE READY')) + c.dim(' — she reads the news in her own voice'));
+  console.log('     model     ' + (marker.model || VOICE_MODEL));
+  console.log('     python    ' + (marker.python || '?')
+    + (marker.pythonVersion ? c.dim(' (v' + marker.pythonVersion + ')') : ''));
+  console.log('     identity  ' + identity + ' '
+    + (existsSync(refClip) ? c.dim('— golden clip on file') : c.yellow('(golden clip missing: voices/' + identity + '.wav)')));
+  console.log('     installed ' + fmtWhen(marker.installedAt));
+  console.log('     venv      ' + c.dim(vp.venv));
+  console.log('');
+}
+
+function cmdVoiceUninstall() {
+  const vp = voicePaths();
+  const wasThere = existsSync(vp.dir);
+  try {
+    rmSync(vp.dir, { recursive: true, force: true });
+  } catch (e) {
+    console.log('  ' + c.red('✗') + ' could not remove ' + vp.dir + ' — ' + String(e?.message || e));
+    process.exitCode = 1;
+    return;
+  }
+  if (!wasThere) {
+    console.log('  ' + c.dim('– her voice was never installed — nothing to remove.'));
+    return;
+  }
+  console.log('  ' + c.green('✓') + ' voice tier removed — venv and ready marker are gone from ' + vp.dir + '.');
+  console.log('  ' + c.dim('  rendered audio stays in ' + join(home(), 'audio') + ' — delete that folder to reclaim space.'));
+  console.log('  ' + c.dim('  the newsroom falls back to browser TTS.'));
+}
+
+async function cmdVoice() {
+  const sub = args[1];
+  if (sub === 'install') await cmdVoiceInstall();
+  else if (sub === 'status') cmdVoiceStatus();
+  else if (sub === 'uninstall') cmdVoiceUninstall();
+  else {
+    console.log('  usage: pepper voice install|status|uninstall');
+    process.exitCode = 1;
+  }
+}
+
 // ---------- dispatch ----------
 
 async function main() {
@@ -556,6 +774,7 @@ async function main() {
       exitSoon(0);
       break;
     case 'daemon': await cmdDaemon(); break;
+    case 'voice': await cmdVoice(); break;
     case 'version': console.log('pepper v' + VERSION); break;
     case 'help': console.log(helpText()); break;
     default:

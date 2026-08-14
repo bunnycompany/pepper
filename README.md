@@ -22,8 +22,10 @@ summarizes ever leaves your machine.
   fallback for everything else.
 - **3D newsroom.** A Three.js studio with a built-in stylized anchor — or drop
   in your own VRM avatar and she wears it.
-- **Browser TTS.** She reads every bulletin aloud with your browser's own
-  speech synthesis. No cloud voices.
+- **Her own voice.** `pepper voice install` renders every bulletin in her
+  designed voice, fully on-device (Qwen3-TTS, no human cloned) — and exports
+  carry the audio, so your public station speaks with her real voice too.
+  Without it, browser speech synthesis reads the news. No cloud voices ever.
 - **Static broadcast-site export.** `pepper export` produces a site any static
   host can serve, where visitors watch her read the latest shows.
 - **On air 24/7.** `pepper daemon install` keeps her running via launchd on
@@ -61,6 +63,7 @@ within seconds and goes on air with her first bulletin.
 | `pepper brief [--json\|--speak]` | Latest bulletin in the terminal (`--speak` uses macOS `say`) |
 | `pepper ask <question>` | Ask Pepper about what she's tracking |
 | `pepper research <question>` | Deep dive: multi-angle sweep → on-device desk report, filed as a bulletin ([Siri bridge](docs/SIRI.md)) |
+| `pepper voice install\|status\|uninstall` | Her real voice: local TTS tier, rendered per bulletin ([docs](docs/VOICE.md)) |
 | `pepper export [--out dir]` | Export the static broadcast site |
 | `pepper doctor` | Check node, brain, home dir, port, daemon |
 | `pepper daemon install\|uninstall\|status` | Run 24/7 via launchd (macOS) |

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, copyFileSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { createRequire } from 'node:module';
-import { loadConfig, paths, PKG_ROOT } from './config.js';
+import { loadConfig, paths, home, PKG_ROOT } from './config.js';
 import { c } from './log.js';
 import * as store from './store.js';
 import { vendorRoots } from './server.js';
@@ -147,6 +147,30 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
   } catch (e) {
     errors.push('data/broadcast.json');
     console.log('  ' + c.red('✗') + ' data/broadcast.json — ' + String(e?.message || e));
+  }
+
+  // 5. her rendered voice — ship the WAVs for every exported bulletin that has them
+  try {
+    let audioFiles = 0;
+    let withAudio = 0;
+    for (const b of bulletins) {
+      if (!b?.id) continue;
+      const src = join(home(), 'audio', b.id);
+      if (!existsSync(src)) continue;
+      const n = copyDir(src, join(out, 'audio', b.id));
+      if (n > 0) { audioFiles += n; withAudio++; }
+    }
+    if (audioFiles > 0) {
+      files += audioFiles;
+      console.log('  ' + c.green('✓') + ' audio/ — '
+        + `${audioFiles} file${audioFiles === 1 ? '' : 's'} across ${withAudio} bulletin${withAudio === 1 ? '' : 's'}`
+        + c.dim(' — visitors hear her real voice'));
+    } else {
+      console.log('  ' + c.dim('– no rendered audio — visitors\' browsers will speak the bulletins'));
+    }
+  } catch (e) {
+    errors.push('audio/');
+    console.log('  ' + c.red('✗') + ' audio/ — ' + String(e?.message || e));
   }
 
   console.log('');

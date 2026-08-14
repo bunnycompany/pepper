@@ -14,39 +14,83 @@ provenance is reproducible.
 | `calm-pro` | `voices/calm-pro.wav` | "Young female broadcaster, calm confident newsroom register, warm mid-tone, crisp consonants, gentle upbeat lilt at sentence ends" |
 | `vtuber-spark` | `voices/vtuber-spark.wav` | "Energetic female VTuber host, playful sparkle, fast but articulate, youthful timbre, cheerful with a professional edge" |
 
-## Making browser TTS bearable today
+Every golden clip reads the same canonical passage, stored in
+[`voices/transcripts.json`](../voices/transcripts.json) — the TTS worker
+passes it as the reference transcript when conditioning on a clip. Switch
+identity with `voice.identity` in `~/.pepper/config.json`
+(`bright-anchor` is the default).
 
-Until the real voice tier ships, she speaks with `speechSynthesis` — and the
-default voice most browsers hand out is dreadful. The studio now scores every
-available voice and auto-picks the best match for her register (bright,
-young, female, clear), and the panel's voice picker lists candidates
-best-first. To raise the ceiling:
+## Her real voice, on your machine
 
-- **macOS (Safari *and* Chrome):** download a premium voice once — System
-  Settings → Accessibility → Spoken Content → System Voice → Manage Voices →
-  get **Ava (Premium)** or **Zoe (Premium)**. Both browsers then expose it,
-  and the auto-picker will grab it. Safari is not required.
-- **Microsoft Edge (any OS):** ships free neural voices ("Microsoft Aria
-  Online (Natural)" etc.) — the best zero-install browser TTS anywhere; the
-  picker ranks them first automatically.
-- **Everything else:** the picker avoids the novelty voices and robo-defaults,
-  but ceilings vary; the designed-voice tier below is the real fix.
+The local TTS tier has shipped. One command on any Apple Silicon Mac
+(8GB is enough — that is the machine it was tuned on):
 
-## How they're used
+```sh
+pepper voice install
+```
 
-**Today** the studio speaks with your browser's own speech synthesis
-(`speechSynthesis`) — the golden clips define where her voice is *going*, and
-`config.voice.identity` records the chosen identity.
+What it does, in order, with honest failures at every step:
 
-**The local TTS tier** (roadmap) serves her real voice: an
-[mlx-audio](https://github.com/Blaizzy/mlx-audio) server runs
-`Qwen3-TTS-12Hz-0.6B-Base` (4-bit, ~2.3GB), zero-shot conditioned on the
-selected golden clip, streaming sentence-chunked 24kHz audio to the newsroom;
-[wawa-lipsync](https://github.com/wass08/wawa-lipsync) drives the VRM mouth
-client-side. Low-power machines fall back to a Kokoro CoreML build on the
-Apple Neural Engine, and the browser fallback remains `speechSynthesis` /
-kokoro-js. Her `[HAPPY]`-class emotion tags map to per-sentence instruct
-strings on the Qwen backend and to VRM expressions simultaneously.
+1. Finds a Python 3.10+ (Homebrew `python3.x` binaries preferred, newest
+   first; 3.9 is rejected — mlx-audio needs 3.10).
+2. Creates a venv at `~/.pepper/voice/venv`.
+3. `pip install mlx-audio` into that venv — nothing touches your system
+   Python.
+4. Warms up `mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit`, which downloads
+   the weights once so her first broadcast doesn't stall.
+5. Writes the ready marker `~/.pepper/voice/ready`.
+
+`pepper voice status` shows the installed model, Python, and active identity;
+`pepper doctor` grows a `voice` line; `pepper voice uninstall` removes
+`~/.pepper/voice` entirely (rendered audio in `~/.pepper/audio` is kept —
+delete it yourself to reclaim the space).
+
+## How rendering works
+
+When a bulletin is written, the server hands every line of the show to a
+Python worker over the same line-oriented JSONL protocol the brain sidecar
+uses. The worker runs Qwen3-TTS zero-shot: it conditions on the golden clip
+for your configured identity plus its reference transcript, and writes one
+24kHz mono 16-bit WAV per line into `~/.pepper/audio/<bulletinId>/`:
+
+```
+open.wav                  the cold open
+<seg>-<line>.wav          each script line of each segment
+handoff-<seg>.wav         the handoff before a segment, where one exists
+signoff.wav               the sign-off
+```
+
+Once every line is on disk, the bulletin JSON gains `"audio": true` and the
+studio hears an `audio-ready` event over SSE.
+
+Measured on the 8GB M-series floor: real-time factor ≈ **1.25** (ten seconds
+of Pepper takes about twelve and a half to render) and a warm model load of
+≈ 2.4s. A full bulletin's audio lands shortly after the bulletin itself —
+the newsroom never blocks on it.
+
+## Fallback chain
+
+Playback is per-file, so the chain degrades gracefully:
+
+1. **Her real voice** — the webapp plays `./audio/<bulletinId>/<name>.wav`
+   when the file exists.
+2. **Browser TTS** — file missing (tier not installed, still rendering, or
+   non-Apple hardware): `speechSynthesis` reads the line instead. The studio
+   scores every available browser voice and auto-picks the best match for her
+   register; the panel's voice picker lists candidates best-first. To raise
+   that ceiling: on macOS download a premium voice once (System Settings →
+   Accessibility → Spoken Content → System Voice → Manage Voices → **Ava** or
+   **Zoe (Premium)**); Microsoft Edge ships free neural voices the picker
+   ranks first automatically.
+
+## Exports carry her voice
+
+`pepper export` copies `~/.pepper/audio/<id>/` for every exported bulletin
+into `<out>/audio/<id>/` (when it exists) and counts the WAVs in its summary.
+The static site uses the same relative `./audio/...` URLs as the live studio,
+so visitors to a deployed station — pepper.watch — hear her real voice.
+Bulletins that were never rendered fall back to the visitor's browser TTS,
+exactly like the live chain above.
 
 ## Compliance
 
@@ -69,5 +113,6 @@ m = load_model('mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit')
 ```
 
 Save the winning take as `voices/<identity>.wav`, add its instruct to the
-table above, and never delete a shipped golden clip — visitors' Peppers
-should not change voices retroactively without their operator choosing it.
+table above, add its reference transcript to `voices/transcripts.json`, and
+never delete a shipped golden clip — visitors' Peppers should not change
+voices retroactively without their operator choosing it.

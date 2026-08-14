@@ -26,6 +26,11 @@ export const paths = {
   get brainBuildLog() { return join(home(), 'brain', 'build.log'); },
   get logsDir() { return join(home(), 'logs'); },
   get avatar() { return join(home(), 'avatar.vrm'); },
+  get audioDir() { return join(home(), 'audio'); },
+  audio(bulletinId) { return join(home(), 'audio', bulletinId); },
+  get voiceDir() { return join(home(), 'voice'); },
+  get voiceReady() { return join(home(), 'voice', 'ready'); },
+  get voiceVenv() { return join(home(), 'voice', 'venv'); },
   get web() { return join(PKG_ROOT, 'web'); },
   get brainSrc() { return join(PKG_ROOT, 'src', 'brain', 'brain.swift'); },
 };
