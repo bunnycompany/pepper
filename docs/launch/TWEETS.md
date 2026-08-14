@@ -42,8 +42,8 @@ pepper-desk (2B, runs on a MacBook): 88.6% grounding vs the 7B base's 77.5%, and
 
 **5/**
 everything is reproducible on a Mac you own:
-- code + bench: github.com/bunnycompany/pepper
-- weights: huggingface.co/bunnycompany (Apache-2.0)
+- code + bench: github.com/bunnycompany/pepper (AGPL-3.0)
+- weights: huggingface.co/pepperchan — pepper-desk (Gemma terms) + pepper-7b (Apache-2.0)
 - her voices: three designed identities, no human cloned
 
 her lineage: chaotic VTuber → research anchor → language model. commit
