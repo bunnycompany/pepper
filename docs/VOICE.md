@@ -14,6 +14,24 @@ provenance is reproducible.
 | `calm-pro` | `voices/calm-pro.wav` | "Young female broadcaster, calm confident newsroom register, warm mid-tone, crisp consonants, gentle upbeat lilt at sentence ends" |
 | `vtuber-spark` | `voices/vtuber-spark.wav` | "Energetic female VTuber host, playful sparkle, fast but articulate, youthful timbre, cheerful with a professional edge" |
 
+## Making browser TTS bearable today
+
+Until the real voice tier ships, she speaks with `speechSynthesis` — and the
+default voice most browsers hand out is dreadful. The studio now scores every
+available voice and auto-picks the best match for her register (bright,
+young, female, clear), and the panel's voice picker lists candidates
+best-first. To raise the ceiling:
+
+- **macOS (Safari *and* Chrome):** download a premium voice once — System
+  Settings → Accessibility → Spoken Content → System Voice → Manage Voices →
+  get **Ava (Premium)** or **Zoe (Premium)**. Both browsers then expose it,
+  and the auto-picker will grab it. Safari is not required.
+- **Microsoft Edge (any OS):** ships free neural voices ("Microsoft Aria
+  Online (Natural)" etc.) — the best zero-install browser TTS anywhere; the
+  picker ranks them first automatically.
+- **Everything else:** the picker avoids the novelty voices and robo-defaults,
+  but ceilings vary; the designed-voice tier below is the real fix.
+
 ## How they're used
 
 **Today** the studio speaks with your browser's own speech synthesis

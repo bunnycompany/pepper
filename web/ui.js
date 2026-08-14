@@ -162,6 +162,32 @@ function loadVoices() {
   }
 }
 
+// Score every voice for Pepper's register (young, bright, female, clear).
+// Browsers hide their best voices behind terrible defaults: Edge ships
+// excellent Microsoft "Natural" voices, macOS has Premium/Enhanced voices
+// once downloaded (System Settings → Accessibility → Spoken Content), and
+// every list is polluted with novelty voices that must never read the news.
+export function scoreVoice(v) {
+  const n = (v.name || '').toLowerCase();
+  if (!/^en/i.test(v.lang || '')) return -100;
+  let s = 0;
+  if (/\b(aria|jenny|michelle|emma|ana|sonia|libby)\b/.test(n) && /natural|online/.test(n)) s += 90;
+  if (/siri/.test(n)) s += 45;
+  if (/\b(ava|zoe|samantha|allison)\b/.test(n)) s += 55;
+  if (/\b(serena|karen|moira|susan|kate|stephanie|tessa)\b/.test(n)) s += 35;
+  if (/premium/.test(n)) s += 35;
+  if (/enhanced/.test(n)) s += 25;
+  if (/natural|neural/.test(n)) s += 20;
+  if (/female/.test(n)) s += 10;
+  if (/^en-us/i.test(v.lang)) s += 8;
+  else if (/^en-(gb|au|ie|nz)/i.test(v.lang)) s += 4;
+  if (v.localService) s += 6;
+  if (/google (us|uk) english/.test(n)) s -= 25;
+  if (/\bmale\b/.test(n) && !/female/.test(n)) s -= 12;
+  if (/\b(fred|albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|kathy|grandma|grandpa|rocko|shelley|flo|eddy|reed|sandy)\b/.test(n)) s -= 80;
+  return s;
+}
+
 function pickVoice() {
   const vs = state.voices;
   if (!vs.length) return null;
@@ -169,13 +195,7 @@ function pickVoice() {
     const chosen = vs.find((v) => v.voiceURI === state.voiceURI);
     if (chosen) return chosen;
   }
-  const en = vs.filter((v) => /^en/i.test(v.lang));
-  return en.find((v) => /siri/i.test(v.name))
-    || en.find((v) => /\b(ava|zoe|samantha)\b/i.test(v.name) && /premium|enhanced/i.test(v.name))
-    || en.find((v) => /premium|enhanced|natural/i.test(v.name))
-    || en.find((v) => /\b(ava|zoe|samantha|allison|susan|karen|moira)\b/i.test(v.name))
-    || en[0]
-    || vs[0];
+  return vs.slice().sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] || null;
 }
 
 function buildVoiceSelect() {
@@ -190,7 +210,9 @@ function buildVoiceSelect() {
     if (v.voiceURI === current) o.selected = true;
     return o;
   };
-  const en = state.voices.filter((v) => /^en/i.test(v.lang));
+  // Best candidates first — visitors shouldn't have to dig for a good one.
+  const en = state.voices.filter((v) => /^en/i.test(v.lang))
+    .sort((a, b) => scoreVoice(b) - scoreVoice(a));
   const rest = state.voices.filter((v) => !/^en/i.test(v.lang));
   for (const v of en) sel.append(mk(v));
   if (rest.length) {

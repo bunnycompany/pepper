@@ -17,7 +17,7 @@ run your own: pepper.software
 **2/**
 she's open source (AGPL-3.0) and installs in 30 seconds:
 
-npm i -g @bunnycompany/pepper
+npm i -g @pepperchan/pepper
 pepper add "on-device AI"
 pepper start
 

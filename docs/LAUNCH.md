@@ -24,7 +24,7 @@ sites by re-running `pepper export` + `wrangler pages deploy`.
 ## Launch sequence
 
 1. **T-0 prep (done / in flight)**
-   - npm `@bunnycompany/pepper@0.0.1` — audited, staged; needs `npm login` + publish
+   - npm `@pepperchan/pepper@0.0.1` — audited, staged; needs `npm login` + publish
    - Sites built and deployed (pages.dev), custom domains attached in dash
    - pepper-desk-e2b v2 training on the groomed think-then-speak dataset
 2. **Gate** — MoltBench: pepper-desk must beat base Qwen-7B's 64.5% grounding
