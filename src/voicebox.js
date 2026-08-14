@@ -35,6 +35,29 @@ const FALLBACK_REF_TEXT = "Good evening. You're at the MNN research desk — I'm
 // cold cache), and RTF ≈ 1.25 means a long line can take tens of seconds.
 const STATUS_TIMEOUT_MS = 120_000;
 const LINE_TIMEOUT_MS = 120_000;
+
+// Acronyms she reads as words (or brand-reads) — everything else in caps
+// gets letter-spaced so "AISI" can't come out "AIIC". Tuned from the
+// Whisper round-trip audit of her real renders (digits bucket 2.1× worse).
+const SPEAKABLE_ACRONYMS = new Set([
+  'MNN', 'NASA', 'AI', 'US', 'UK', 'EU', 'CEO', 'GPU', 'CPU', 'API', 'LLM',
+  'RAM', 'SSD', 'USB', 'FAQ', 'ROI', 'IPO', 'WWDC', 'RSS', 'PDF', 'LIVE',
+]);
+
+// Final gate before her mouth: markdown debris, handle names, hour
+// abbreviations, and letter-acronyms are rewritten as they should SOUND.
+export function speechNormalize(text) {
+  let t = String(text ?? '');
+  t = t.replace(/[*_`#]+/g, ' ');
+  t = t.replace(/\bhttps?:\/\/\S+/gi, 'the link on screen');
+  t = t.replace(/(\d+)\s*h ago\b/gi, (_, n) => `${n} hour${n === '1' ? '' : 's'} ago`);
+  t = t.replace(/&/g, ' and ');
+  t = t.replace(/\b([A-Z]{3,6})\b/g, (m) => {
+    if (SPEAKABLE_ACRONYMS.has(m)) return m;
+    return m.split('').join(' ');
+  });
+  return t.replace(/\s+/g, ' ').trim();
+}
 const RAPID_CRASH_WINDOW_MS = 60_000;
 const MAX_RAPID_CRASHES = 3;
 
@@ -323,7 +346,7 @@ class Voicebox {
   // Render one spoken line to a WAV at outPath. → bool, never throws.
   async renderLine(text, outPath) {
     try {
-      const line = String(text ?? '').replace(/\s+/g, ' ').trim();
+      const line = speechNormalize(text);
       const out = String(outPath || '');
       if (!line || !out) return false;
       if (!(await this.ensure())) return false;

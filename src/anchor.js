@@ -282,8 +282,34 @@ export function fallbackSegment(topicName, items) {
 // Assembles the exact Bulletin shape from CONTRACTS.md §4. Segments arrive
 // fully built (slug, topic, mood, headline, handoff, script, sources,
 // freshCount) from research.js; this stamps identity and metadata.
+// Speech lint — tuned from the Whisper round-trip audit of her real renders
+// (2026-08-14, 154 clips): "watches next" slurs into "watch is next", so her
+// catchphrase gets the liaison-safe form; markdown and handle debris must
+// never reach her mouth.
+export function lintForSpeech(text) {
+  return String(text || '')
+    .replace(/[*_`]+/g, '')
+    .replace(/\b(T|t)he desk watches next for\b/g, (_, t) => `${t}he desk is watching for`)
+    .replace(/\b(T|t)he desk watches next\b/g, (_, t) => `${t}he desk is watching`)
+    .replace(/\b(W|w)atches next for\b/g, (_, w) => (w === 'W' ? 'Is' : 'is') + ' watching for')
+    .replace(/(\d+)h ago\b/gi, (_, n) => `${n} hour${n === '1' ? '' : 's'} ago`)
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function lintSegment(seg) {
+  if (!seg) return seg;
+  return {
+    ...seg,
+    handoff: seg.handoff ? lintForSpeech(seg.handoff) : seg.handoff,
+    script: Array.isArray(seg.script) ? seg.script.map(lintForSpeech) : seg.script,
+  };
+}
+
 export function composeBulletin({ open, signoff, segments, brainMode, stats } = {}) {
-  const segs = Array.isArray(segments) ? segments.filter(Boolean) : [];
+  const segs = (Array.isArray(segments) ? segments.filter(Boolean) : []).map(lintSegment);
+  open = open ? lintForSpeech(open) : open;
+  signoff = signoff ? lintForSpeech(signoff) : signoff;
   let lines = null;
   if (!open || !signoff) {
     lines = pickOpenSignoff({
