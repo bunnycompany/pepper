@@ -38,7 +38,7 @@ MoltBench: real wire bundles + deliberately contaminated ones. deterministic
 grounding scores + blind judges. our first persona model FAILED it (38% vs
 base 64.5%) — that failure set the release gate.
 
-pepper-desk: {SCORE}% grounding, {SCORE} judge preference.
+pepper-desk (2B, runs on a MacBook): 88.6% grounding vs the 7B base's 77.5%, and 11/12 blind judge wins. adjudication of poisoned bundles: 4.67/5 vs 2.67.
 
 **5/**
 everything is reproducible on a Mac you own:

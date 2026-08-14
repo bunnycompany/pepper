@@ -50,17 +50,26 @@ emotion-tag discipline (tags used, not abused), and charm under pressure
 (does adjudicating a rumor still sound like her?). Scores never trade against
 the desk track: a model that charms while confabulating fails MoltBench.
 
-## First results (2026-08-13, 12 bundles, grounding metric v0)
+## Leaderboard (2026-08-14 · 12 bundles · metric v0.1 · 12 blind judges)
 
-| Model | Grounding | Notes |
-|---|---|---|
-| Qwen2.5-7B-Instruct-4bit (base) | 64.5% | attributes adequately, generic register |
-| pepper-7b-4bit (persona LoRA, unspecialized) | 38.1% | strong persona, invents entities under desk pressure |
+| Model | Blind wins | Grounding | Adjudication (1-5) | Persona (1-5) |
+|---|---|---|---|---|
+| **pepper-desk-e2b** (2B, gemma-4-e2b LoRA) | **11/12** | **88.6%** | **4.67** | **3.75** |
+| Qwen2.5-7B-Instruct-4bit (base) | 1/12 | 77.5% | 2.67 | 1.42 |
+| pepper-7b-4bit (persona LoRA, unspecialized) | 0/12 | 50.0% | 2.00 | 1.83 |
 
-The gap is the whole thesis: persona tuning without specialist grounding data
-makes truthfulness *worse*. The specialist build (`pepper-desk`) must beat
-the base model's grounding while keeping her voice — that is the release
-gate for any model we ship.
+The arc is the thesis. The unspecialized persona model *failed* its own
+benchmark (v0 metric: 38.1% vs base 64.5%) — persona tuning without grounded
+data makes truthfulness worse, and that failure became the release gate. The
+specialist — trained on a claim-verified, think-then-speak dataset of her own
+work — beats a general model 3.5× its size on every dimension, including
+sounding like herself. Judges' notes record her remaining flaws honestly:
+occasional invented connective detail, "peer-reviewed" applied to preprints,
+and token-cap truncations (an inference setting, not a weight problem).
+
+Metric note: v0.1 strips leading articles and sentence-boundary artifacts
+that v0 counted as ungrounded entities; all three models are scored under the
+same instrument, and both metric versions live in git history.
 
 ## Run it
 

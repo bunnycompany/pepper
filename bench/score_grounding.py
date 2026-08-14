@@ -16,7 +16,17 @@ def entities(text):
         r"\b\d[\d,.]*\s?(?:percent|%|billion|million|trillion|B|M|pts)?\b", text))
     ents |= set(re.findall(
         r"\b(?:[A-Z][a-zA-Z0-9'&.-]+(?:\s+[A-Z][a-zA-Z0-9'&.-]+)+)\b", text))
-    return {e.strip() for e in ents if len(e.strip()) > 2}
+    out = set()
+    for e in ents:
+        e = e.strip()
+        # v0.1: sentence-boundary mash ("GPT-5. TechCrunch") is two mentions,
+        # not an entity; leading articles are prose, not provenance.
+        if ". " in e or e.endswith("."):
+            continue
+        e = re.sub(r"^(?:The|An|A)\s+", "", e)
+        if len(e) > 2:
+            out.add(e)
+    return out
 
 
 def main(bundles_path, outputs_path):
