@@ -703,6 +703,19 @@ function connectSSE() {
     setGoLiveButton();
   });
 
+  on('research-sweep', (d) => {
+    if (state.researchBubble && d && d.query) {
+      state.researchBubble.textContent = 'Deep dive — sweeping: ' + d.query;
+    }
+  });
+  on('research-done', () => {
+    if (state.researchBubble) {
+      state.researchBubble.classList.remove('thinking');
+      state.researchBubble.textContent = 'Filed. Watch the desk — I\'ll present it in a moment.';
+      state.researchBubble = null;
+    }
+  });
+
   on('topics', (d) => {
     renderTopics((d && d.topics) || []);
     if (!state.playing) {
@@ -777,6 +790,12 @@ async function bootStudio(st) {
     }
   }
   state.booted = 'studio';
+  // First-day onboarding: no beats yet → she introduces herself and asks.
+  if (!state.topics.length) {
+    togglePanel(true);
+    if (els.askInput) els.askInput.placeholder = 'e.g. "local AI, robotics, weird internet stuff"';
+    bubble('pepper', 'First day on the desk! Tell me what you care about — plain words are fine — and I\'ll set up my beats and get to work.');
+  }
   // If JOIN was clicked while we were still booting, start now.
   if (state.unlocked && !state.playing && !maybePlay()) startIdle();
 }
@@ -978,6 +997,57 @@ function bindUI() {
     if (!q) return;
     els.askInput.value = '';
     bubble('user', q);
+
+    // First-day onboarding: no beats yet → whatever they say is interests.
+    if (state.mode === 'studio' && !state.topics.length) {
+      const thinking = bubble('pepper thinking', 'Setting up my desk…');
+      try {
+        const r = await fetchJSON('./api/onboard', { method: 'POST', body: { interests: q }, timeoutMs: 100000 });
+        thinking.classList.remove('thinking');
+        thinking.textContent = (r.added && r.added.length)
+          ? `On it. My beats: ${r.added.join(' · ')}. First sweep starts now — give me a minute and I'll go on air.`
+          : 'I couldn\'t turn that into beats — try naming a few topics, comma-separated.';
+      } catch (err) {
+        thinking.classList.remove('thinking');
+        thinking.textContent = 'Desk setup hiccuped: ' + err.message;
+      }
+      return;
+    }
+
+    // Intent routing: track/drop/research are actions, everything else is a question.
+    const mTrack = q.match(/^(?:track|watch|follow|add)\s+(.{2,60})$/i);
+    const mDrop = q.match(/^(?:drop|stop watching|unfollow|untrack)\s+(.{2,60})$/i);
+    const mDig = q.match(/^(?:research|dig into|deep dive(?:\s+(?:on|into))?|investigate|look into)\s+(.{4,200})$/i);
+
+    if (mTrack) {
+      try {
+        const t = await fetchJSON('./api/topics', { method: 'POST', body: { name: mTrack[1].trim() } });
+        bubble('pepper', `On it — "${t.name}" is on my watch list. It joins the next sweep.`);
+      } catch (err) {
+        bubble('pepper', 'Couldn\'t add that beat: ' + err.message);
+      }
+      return;
+    }
+    if (mDrop) {
+      try {
+        await fetchJSON('./api/topics/' + encodeURIComponent(mDrop[1].trim()), { method: 'DELETE' });
+        bubble('pepper', `Dropped. "${mDrop[1].trim()}" is off the desk.`);
+      } catch {
+        bubble('pepper', 'I wasn\'t watching that one.');
+      }
+      return;
+    }
+    if (mDig) {
+      const topic = mDig[1].trim();
+      try {
+        await fetchJSON('./api/research', { method: 'POST', body: { q: topic } });
+        state.researchBubble = bubble('pepper thinking', `Deep dive on "${topic}" — sweeping the wire…`);
+      } catch (err) {
+        bubble('pepper', 'The deep dive didn\'t start: ' + err.message);
+      }
+      return;
+    }
+
     const thinking = bubble('pepper thinking', 'Checking the wire…');
     try {
       const r = await fetchJSON('./api/ask', { method: 'POST', body: { q }, timeoutMs: 100000 });

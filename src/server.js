@@ -284,6 +284,35 @@ export function createPepperServer(opts = {}) {
         return jsonRes(res, 202, { started: true });
       }
 
+      if (p === '/api/onboard' && req.method === 'POST') {
+        const { interests } = await readBody(req);
+        if (!interests || !String(interests).trim()) return jsonRes(res, 400, { error: 'interests required' });
+        const { brain } = await mods();
+        let beats = [];
+        const text = await brain.generate({
+          instructions: 'You turn a person\'s stated interests into 3 to 6 short news-beat names, one per line, each one to four words, concrete and searchable. No numbering, no commentary.',
+          prompt: `Interests: ${String(interests).slice(0, 600)}`,
+          max: 90,
+        });
+        if (text) {
+          beats = text.split('\n')
+            .map((s) => s.trim().replace(/^[-*\d.)\s]+/, ''))
+            .filter((s) => s && s.length <= 40 && /^[\w"'’ .&-]+$/.test(s))
+            .slice(0, 6);
+        }
+        if (!beats.length) {
+          beats = String(interests).split(/,|\band\b|;|\n/)
+            .map((s) => s.trim()).filter((s) => s && s.length <= 40).slice(0, 6);
+        }
+        const added = [];
+        for (const b of beats) {
+          try { added.push(store.addTopic(b).name); } catch { /* dup — fine */ }
+        }
+        sseSend('topics', { topics: store.listTopics() });
+        if (added.length && !state.researching) doCycle('onboard');
+        return jsonRes(res, 200, { added });
+      }
+
       if (p === '/api/research' && req.method === 'POST') {
         const { q } = await readBody(req);
         if (!q || !String(q).trim()) return jsonRes(res, 400, { error: 'q required' });

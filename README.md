@@ -164,7 +164,7 @@ If the file is missing or fails to load, she falls back to the built-in Pepper:
 pepper daemon install
 ```
 
-On macOS this installs a launchd LaunchAgent (`com.pepperchan.pepper`) that
+On macOS this installs a launchd LaunchAgent (`software.pepper`) that
 keeps the desk running across logins and reboots, with logs in
 `~/.pepper/logs/`. `pepper daemon status` checks on her;
 `pepper daemon uninstall` takes her off air.

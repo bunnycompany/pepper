@@ -4,7 +4,7 @@ import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { paths, home, ensureHome, PKG_ROOT } from './config.js';
 
-export const LABEL = 'com.pepperchan.pepper';
+export const LABEL = 'software.pepper';
 
 export function plistPath() {
   return join(homedir(), 'Library', 'LaunchAgents', LABEL + '.plist');
