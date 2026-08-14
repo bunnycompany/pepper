@@ -926,6 +926,10 @@ function bindUI() {
       else startIdle();
     } else if (!maybePlay()) {
       startIdle();
+      // Fresh desk: now that audio is unlocked, she says hello out loud.
+      if (!state.topics.length) {
+        speakLine('First day on the desk! Tell me what you care about — the box is right there in the panel — and I\'ll set up my beats and get to work.');
+      }
     }
   });
 

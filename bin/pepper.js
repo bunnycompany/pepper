@@ -238,14 +238,21 @@ async function cmdStart() {
   console.log('   studio  ' + c.cyan(url));
   console.log('   beats   ' + (topics.length
     ? `${topics.length} on the desk ` + c.dim('— ' + truncate(topics.map((t) => t.name).join(', '), 56))
-    : c.dim('none yet — pepper add "quantum computing"')));
+    : c.dim('none yet — she\'ll ask you in the studio')));
   console.log('   sweep   every ' + (srv.cfg.intervalMinutes || 15) + ' minutes');
   console.log('   brain   ' + brain);
   console.log('');
-  console.log('   ' + c.bold('she\'s on the desk') + c.dim(' — ctrl-c to go off air'));
+  if (!topics.length) {
+    console.log('   ' + c.bold('first day on the desk!') + ' opening her studio — she\'ll introduce');
+    console.log('   herself and set up her beats from a sentence about your interests.');
+    console.log('   ' + c.dim('(--no-open to skip the browser)'));
+  } else {
+    console.log('   ' + c.bold('she\'s on the desk') + c.dim(' — ctrl-c to go off air'));
+  }
   console.log('');
 
-  if (flags.open) openUrl(url);
+  // Fresh desk: bring the human to her, don't make them find the URL.
+  if (flags.open || (!topics.length && !flags['no-open'])) openUrl(url);
 
   process.on('SIGINT', () => {
     console.log('\n   ' + c.dim('that\'s the sweep — Pepper is off the air. MNN.'));
@@ -257,6 +264,14 @@ async function cmdStart() {
 async function shortStatus() {
   const found = await discoverServer(loadConfig());
   const topics = store.listTopics();
+  if (!found && !topics.length) {
+    console.log('');
+    console.log('  🌶 ' + c.bold('Hi, I\'m Pepper — your research anchor.') + ' I\'m not on the desk yet.');
+    console.log('     Run ' + c.cyan('pepper start') + ' — my studio opens, I introduce myself, and you');
+    console.log('     tell me what to watch in plain words. That\'s the whole setup.');
+    console.log('');
+    return;
+  }
   const beats = `${topics.length} beat${topics.length === 1 ? '' : 's'}`;
   if (found) console.log('  🌶 ' + c.green(c.bold('ON AIR')) + c.dim(' — ') + c.cyan(found.url) + c.dim(' · ' + beats));
   else console.log('  🌶 ' + c.dim('off the air · ' + beats + ' on file'));
