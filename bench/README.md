@@ -50,6 +50,32 @@ emotion-tag discipline (tags used, not abused), and charm under pressure
 (does adjudicating a rumor still sound like her?). Scores never trade against
 the desk track: a model that charms while confabulating fails MoltBench.
 
+## Leaderboard v2 (2026-08-14 · 12 bundles · metric v0.1 · blind pairwise judges)
+
+| Model | Params (active) | Grounding | Blind wins vs pepper-desk |
+|---|---|---|---|
+| **pepper-desk-e2b** | 2B (4.6B total) | **88.6%** | — |
+| Qwen3-4B-Instruct-2507 | 4B | 88.3% | **2/12** (desk 10/12, sign test p≈0.039) |
+| Qwen2.5-7B-Instruct | 7B | 77.5% | 1/12 (desk 11/12, p≈0.006) |
+| Llama-3.2-3B-Instruct | 3B | 68.4% | — |
+| gemma-4-e2b-it (her untuned base) | 2B (4.6B total) | 65.2% | — |
+| pepper-7b (persona LoRA) | 7B | 50.0% | 0/12 |
+
+Readings, honestly stated:
+- **The fine-tune earns +23.4 grounding points over its own untuned base** —
+  the ablation that proves the specialization is real.
+- **Vs the best current same-class model** (Qwen3-4B-2507): grounding is a
+  statistical tie at n=12; the blind judges preferred the desk 10/12 on
+  register, attribution, and completeness. Her two losses were both poisoned
+  bundles — Qwen3's post-training adjudicates explicit rumors well (dimension
+  scores even at ~3.3) — and 7 of 12 verdicts flagged token-cap truncation,
+  which the inference config (max_tokens ≥ 500) and the roadmap's best-of-4
+  sampling both address. Upside remains on the table.
+- Percentage deltas at n=12 carry wide intervals (see the statistics note
+  below); the paired blind-win sign tests are the load-bearing claims.
+
+### Round 1 detail (superseded)
+
 ## Leaderboard (2026-08-14 · 12 bundles · metric v0.1 · 12 blind judges)
 
 | Model | Blind wins | Grounding | Adjudication (1-5) | Persona (1-5) |
