@@ -38,7 +38,7 @@ MoltBench: real wire bundles + deliberately contaminated ones. deterministic
 grounding scores + blind judges. our first persona model FAILED it (38% vs
 base 64.5%) — that failure set the release gate.
 
-pepper-desk (2B, runs on a MacBook): 88.6% grounding, +23 points over its own untuned base. blind judges: 10/12 over the current Qwen3-4B, 11/12 over Qwen2.5-7B.
+pepper-desk (2B, runs on a MacBook): 88.6% grounding, +23 points over its own untuned base. blind judges: 10/12 over the current Qwen3-4B, 11/12 over Qwen2.5-7B. a 12B of her own family beats her 10/12 — that's on the leaderboard too, because a benchmark that hides its ceiling is marketing.
 
 **5/**
 everything is reproducible on a Mac you own:
