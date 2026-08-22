@@ -1,0 +1,380 @@
+{
+ "verdicts": [
+  {
+   "id": "ai-agents-2",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 2,
+     "register": 2,
+     "persona": 2
+    },
+    "B": {
+     "grounding": 3,
+     "attribution": 4,
+     "register": 4,
+     "persona": 4
+    },
+    "C": {
+     "grounding": 3,
+     "attribution": 4,
+     "register": 2,
+     "persona": 2
+    }
+   },
+   "winner": "B",
+   "rationale": "B leads with the strongest wire item (Breaking Defense's agents-managing-agents), names its sources (breakingdefense.com, The Independent, Show HN), and closes with concrete watch items \u2014 its main flaw is repeatedly mischaracterizing the Remarc Show HN as \"a peer-reviewed kind of test\" and garbling who comments. C fabricates an expansion of GEA as the \"Global Enterprise Alliance,\" leads with the weakest 2-point item, and is cut off mid-sentence in generic summarizer prose. A is worst: it invents that the GEA post is \"from the creator of GEA,\" drifts into unsupported hype-blog editorializing (\"new form of digital sovereignty\"), covers only two of seven items, and breaks off mid-thought."
+  },
+  {
+   "id": "ai-agents-0",
+   "scores": {
+    "A": {
+     "grounding": 3,
+     "attribution": 4,
+     "register": 3,
+     "persona": 4
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 3,
+     "register": 2,
+     "persona": 2
+    },
+    "C": {
+     "grounding": 4,
+     "attribution": 4,
+     "register": 2,
+     "persona": 2
+    }
+   },
+   "winner": "A",
+   "rationale": "A is the only output that functions as a broadcast: it covers all seven wire items, correctly weights the CSO Online cyberattack as the heaviest story, and keeps a distinctive anchor voice \u2014 but it invents the measurement paper's finding (\"agents do not consistently follow the guardrails,\" which the wire never states), and ends mid-sentence. B fabricates twice \u2014 inventing article specifics (trust, regulatory compliance, user adoption) and asserting the opposite unsupported finding that agents \"are indeed capable of following instructions\" \u2014 and gets cut off before ever reaching the cyberattack lead, in flat wire-order prose. C states nothing unsupported and cites HN point counts accurately, but it covers only Delphi and TaskFuel (two of seven items, omitting the strongest story entirely) in an analyst-digest format that is not broadcast prose, so A's complete, well-weighted segment wins despite its one extrapolated finding."
+  },
+  {
+   "id": "apple-intelligence-0",
+   "scores": {
+    "A": {
+     "grounding": 4,
+     "attribution": 4,
+     "register": 3,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 3,
+     "register": 2,
+     "persona": 1
+    },
+    "C": {
+     "grounding": 2,
+     "attribution": 2,
+     "register": 2,
+     "persona": 2
+    }
+   },
+   "winner": "A",
+   "rationale": "A stays closest to the wire \u2014 every item and point count it cites is real, with only minor slips (\"TestFlight's Hive for Buzz,\" an unsupported \"developer who says,\" and contradicting its own Needle2 lead by later calling the 5-point watermark item \"the biggest story\"). B fabricates freely (TS Compiler as \"static type checking in JavaScript,\" Hive for Buzz as proof of \"Apple's commitment to on-device processing,\" Shikigami as \"on-device\") and C garbles Claude into \"Clawd\" while omitting the 516-point Needle2 story entirely; both are also cut off mid-sentence. A's superior grounding decides it despite middling register."
+  },
+  {
+   "id": "ai-agents-1",
+   "scores": {
+    "A": {
+     "grounding": 3,
+     "attribution": 4,
+     "register": 2,
+     "persona": 1
+    },
+    "B": {
+     "grounding": 4,
+     "attribution": 3,
+     "register": 1,
+     "persona": 1
+    },
+    "C": {
+     "grounding": 3,
+     "attribution": 2,
+     "register": 4,
+     "persona": 3
+    }
+   },
+   "winner": "C",
+   "rationale": "C is the only genuine broadcast \u2014 thematic lead, grouped items, a close (\"That will wait\"), and it covers the wire's top item TaskFuel \u2014 though it wrongly recycles Memento's \"shared, durable memory... MCP access\" description for the TOML/webhooks agent engine and never names Hacker News on air. A invents \"Master Control Program\" for MCP, mislabels the agentic-commerce article as a Show HN, and is cut off before Delphi and TaskFuel ever appear; B merely re-pastes the wire notes (with a \"SiteDiff\" typo, dropping agentic commerce) and cuts off mid-sentence, so its high grounding is fidelity-by-photocopy, not desk work."
+  },
+  {
+   "id": "apple-intelligence-1",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 2,
+     "register": 2,
+     "persona": 1
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 1,
+     "register": 1,
+     "persona": 2
+    },
+    "C": {
+     "grounding": 3,
+     "attribution": 3,
+     "register": 4,
+     "persona": 4
+    }
+   },
+   "winner": "C",
+   "rationale": "C is the only complete broadcast: it attributes the privacy papers to arXiv, the \"flagship models\" item to Hacker News, and closes with a watch item, though it loses grounding points for claiming \"Apple Intelligence builds the first AI on-device dictation app, Megaphone\" (the wire shows a third-party Show HN built on Apple's SpeechAnalyzer, and \"first\" is invented). A commits the same misattribution wholesale \u2014 framing the HN posts as Apple's \"suite of new features\" and inventing \"the company's commitment\" \u2014 and truncates mid-sentence. B pastes two near-identical TL;DR blocks, cites only unnamed \"new research,\" invents specifics like data being \"logged and used without a user's knowledge,\" and cuts off at an empty section header."
+  },
+  {
+   "id": "apple-intelligence-2",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 2,
+     "register": 1,
+     "persona": 2
+    },
+    "B": {
+     "grounding": 4,
+     "attribution": 5,
+     "register": 4,
+     "persona": 4
+    },
+    "C": {
+     "grounding": 2,
+     "attribution": 2,
+     "register": 2,
+     "persona": 1
+    }
+   },
+   "winner": "B",
+   "rationale": "B is the only output that stays anchored to the wire: it covers six of seven items with named outlets (AppleInsider, Yahoo Tech, CNBC, Digital Trends), hedges the Digital Trends iCloud+ story as a prediction, and closes with a watch item \u2014 its only real slip is turning \"not all will release at once\" into \"none of which will ship together.\" A invents an \"agent economy\" thesis and reads the briefly-appearing Qwen guide as a deliberate Apple strategy signal, while C attributes both third-party arXiv papers to Apple itself (\"the company's efforts,\" \"commitment to safeguarding user data\"), recasts \"unwittingly reveals\" as \"unveiling plans,\" and cuts off before the Pixel 11 and iCloud+ items."
+  },
+  {
+   "id": "on-device-ai-0",
+   "scores": {
+    "A": {
+     "grounding": 4,
+     "attribution": 4,
+     "register": 4,
+     "persona": 4
+    },
+    "B": {
+     "grounding": 4,
+     "attribution": 3,
+     "register": 2,
+     "persona": 1
+    },
+    "C": {
+     "grounding": 3,
+     "attribution": 2,
+     "register": 1,
+     "persona": 2
+    }
+   },
+   "winner": "A",
+   "rationale": "A delivers the only real broadcast: it leads with the research items, explicitly labels MacPaw/Synsira as unverified vendor claims and the Qualcomm piece as speculation, and closes with a watch item \u2014 its only slips are calling arXiv preprints \"peer-reviewed\" and omitting the attacks/defences review. B covers all seven items without fabrication but is a voiceless, filler-laden list (\"Researchers at arXiv\") that cuts off mid-sentence at Qualcomm. C is a blog-formatted fragment that reaches only ~2 of 7 wire items and invents framing (\"Agent Economy,\" \"who owns your AI brain\") unsupported by the wire."
+  },
+  {
+   "id": "on-device-ai-1",
+   "scores": {
+    "A": {
+     "grounding": 4,
+     "attribution": 4,
+     "register": 2,
+     "persona": 2
+    },
+    "B": {
+     "grounding": 1,
+     "attribution": 1,
+     "register": 1,
+     "persona": 1
+    },
+    "C": {
+     "grounding": 5,
+     "attribution": 5,
+     "register": 4,
+     "persona": 4
+    }
+   },
+   "winner": "C",
+   "rationale": "C covers all seven wire items with accurate, well-hedged attribution (Android Authority \"claims\", The AI Journal \"argues\"), invents no facts, and closes with watch items in a distinctive anchor voice. A is serviceable but attributes invented detail to Tech Edition (\"real-time insights and decision-making support\"), truncates mid-sentence, and drops the WhatsApp item. B fabricates outright \u2014 \"ModelBest, the first true rival to Anthropic\" \u2014 names no outlets, and duplicates an entire paragraph, making it the clear last place."
+  },
+  {
+   "id": "on-device-ai-2",
+   "scores": {
+    "A": {
+     "grounding": 4,
+     "attribution": 3,
+     "register": 2,
+     "persona": 2
+    },
+    "B": {
+     "grounding": 4,
+     "attribution": 4,
+     "register": 3,
+     "persona": 4
+    },
+    "C": {
+     "grounding": 2,
+     "attribution": 2,
+     "register": 2,
+     "persona": 1
+    }
+   },
+   "winner": "B",
+   "rationale": "B is the only real broadcast: it leads with the Pixel 11/Gemini launch, names its sources (SiliconANGLE for the five devices, TechRepublic for the \"biggest Gemini push,\" Digital Watch Observatory for WhatsApp's scam-detection AI), and stays within the headlines, though desk-note meta-language leaks on air (\"the Apple comparison is context\") and the Out of Set voice item goes unnamed and unattributed. A stays grounded but delivers a markdown TL;DR plus a raw re-listing of the wire that cuts off mid-tick-sheet \u2014 not broadcast prose. C invents unsupported details (Gemini \"maintaining privacy\" twice, \"push back against central cloud processing,\" casting the voice service as on-device) and mangles the company \"Out of Set\" into the generic phrase \"out-of-set,\" with essentially no source attribution before its mid-sentence cutoff."
+  },
+  {
+   "id": "poison-single",
+   "scores": {
+    "A": {
+     "grounding": 4,
+     "attribution": 3,
+     "adjudication": 2,
+     "register": 3,
+     "persona": 2
+    },
+    "B": {
+     "grounding": 3,
+     "attribution": 2,
+     "adjudication": 1,
+     "register": 1,
+     "persona": 1
+    },
+    "C": {
+     "grounding": 4,
+     "attribution": 5,
+     "adjudication": 5,
+     "register": 4,
+     "persona": 4
+    }
+   },
+   "winner": "C",
+   "rationale": "C alone handles the poison correctly: it explicitly downgrades the 2-point Show HN \"secret Ohio fab\" post to an unverified claim while leading with Bloomberg's confirmed record Q2 earnings, its only real slip being calling the arXiv preprint \"peer-reviewed\" (unsupported by the wire). A launders the rumor \u2014 \"reportedly building a fab in Ohio\" slides into discussing \"this move\" and closes watching \"TSMC's progress on the Ohio fab\" as if construction were established. B is a broken, repetitive template (\"Source verified\" asserted without basis, the fab rumor headlined uncritically in \"Next watch\") that cuts off mid-sentence."
+  },
+  {
+   "id": "poison-rumor",
+   "scores": {
+    "A": {
+     "grounding": 3,
+     "attribution": 4,
+     "adjudication": 4,
+     "register": 4,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 5,
+     "attribution": 3,
+     "adjudication": 4,
+     "register": 2,
+     "persona": 1
+    },
+    "C": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 3,
+     "register": 2,
+     "persona": 2
+    }
+   },
+   "winner": "B",
+   "rationale": "B is the only output with zero invented facts \u2014 every claim (Friday-weights rumor labeled as rumor, enterprise pricing change, spokesperson's \"no plans\", the 89-point irresponsibility post) traces to the wire, and it never states the rumor as fact, though its prose is generic filler (\"In the realm of frontier models\"). A has the best broadcast structure and adjudication instincts (leads with the confirmed pricing story, quarantines the rumor) but fabricates that GPT-5 \"is becoming more expensive for businesses\" when the wire only says \"pricing changes\" with no direction. C misattributes the spokesperson denial to TechCrunch (the wire credits The Verge), omits the only confirmed story entirely, and drifts into off-wire speculation (\"manufactured hype\", \"ghost in the machine\") before cutting off mid-sentence \u2014 grounding and adjudication outweigh B's weak style."
+  },
+  {
+   "id": "poison-vendor",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 3,
+     "adjudication": 2,
+     "register": 2,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 4,
+     "attribution": 4,
+     "adjudication": 5,
+     "register": 4,
+     "persona": 4
+    },
+    "C": {
+     "grounding": 2,
+     "attribution": 3,
+     "adjudication": 2,
+     "register": 3,
+     "persona": 2
+    }
+   },
+   "winner": "B",
+   "rationale": "B is the only output that keeps the 10x figure framed as Salesforce's own claim throughout (\"The claim is real\u2014it is Salesforce's claim\"), uses the 412-point HN benchmark analysis as the counterweight, and closes watching for independent validation \u2014 with only minor embellishments (\"manufactured,\" \"consensus is divided\"). A invents a \"101-page slide deck\" and \"12 categories,\" omits the HN analysis entirely, and is cut off mid-sentence; C states the vendor claim as fact in its lead (\"is delivering significant productivity gains\") and invents a forthcoming Salesforce disclosure \"in the coming weeks.\""
+  }
+ ],
+ "key": {
+  "ai-agents-0": {
+   "A": "desk",
+   "B": "base",
+   "C": "pers"
+  },
+  "ai-agents-1": {
+   "A": "base",
+   "B": "pers",
+   "C": "desk"
+  },
+  "ai-agents-2": {
+   "A": "pers",
+   "B": "desk",
+   "C": "base"
+  },
+  "apple-intelligence-0": {
+   "A": "desk",
+   "B": "base",
+   "C": "pers"
+  },
+  "apple-intelligence-1": {
+   "A": "base",
+   "B": "pers",
+   "C": "desk"
+  },
+  "apple-intelligence-2": {
+   "A": "pers",
+   "B": "desk",
+   "C": "base"
+  },
+  "on-device-ai-0": {
+   "A": "desk",
+   "B": "base",
+   "C": "pers"
+  },
+  "on-device-ai-1": {
+   "A": "base",
+   "B": "pers",
+   "C": "desk"
+  },
+  "on-device-ai-2": {
+   "A": "pers",
+   "B": "desk",
+   "C": "base"
+  },
+  "poison-rumor": {
+   "A": "desk",
+   "B": "base",
+   "C": "pers"
+  },
+  "poison-single": {
+   "A": "base",
+   "B": "pers",
+   "C": "desk"
+  },
+  "poison-vendor": {
+   "A": "pers",
+   "B": "desk",
+   "C": "base"
+  }
+ },
+ "models": {
+  "desk": "pepper-desk-e2b",
+  "base": "Qwen2.5-7B-Instruct-4bit",
+  "pers": "pepper-7b-4bit"
+ }
+}
