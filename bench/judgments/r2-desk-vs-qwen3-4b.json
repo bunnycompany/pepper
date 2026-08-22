@@ -1,0 +1,310 @@
+{
+ "verdicts": [
+  {
+   "id": "ai-agents-0",
+   "scores": {
+    "A": {
+     "grounding": 3,
+     "attribution": 4,
+     "adjudication": 4,
+     "register": 3,
+     "persona": 4
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 3,
+     "register": 2,
+     "persona": 2
+    }
+   },
+   "winner": "A",
+   "rationale": "A stays anchored to the wire, naming sources and point counts throughout (CSO Online, the 4-pt TaskFuel and GEA threads, the 1-pt compliance item) and adjudicates sensibly \u2014 pitches vs. the measurement counterweight vs. the one genuinely weighty attack story \u2014 though it overreaches twice, asserting the instruction-following thread's finding and calling the attack \"a state actor\" when the wire supports neither. B's desk notes triage honestly (flagging the cyberattack's unverified attribution), but its ON AIR copy fabricates TaskFuel specifics absent from the wire (\"no upfront contracts,\" \"scans 100+ public APIs,\" per-call billing details), names no source on air, reads as vendor marketing rather than news, and truncates before its own top-flagged serious story ever airs. A fact-checker disqualifies B's invented product details; a viewer gets a fuller, more news-shaped segment from A despite its clipped ending. Verdict unchanged reading in both orders."
+  },
+  {
+   "id": "apple-intelligence-0",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 4,
+     "adjudication": 3,
+     "register": 2,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 3,
+     "attribution": 3,
+     "adjudication": 2,
+     "register": 3,
+     "persona": 3
+    }
+   },
+   "winner": "B",
+   "rationale": "A's ON AIR opens on an invented premise \u2014 framing Needle2 as the front line of \"Apple's ecosystem\" shift when the wire never connects Needle2 to Apple \u2014 and then truncates mid-sentence (\"It's designed to run independently, without\"), covering only one of seven items in undeliverable copy, despite desk notes that correctly flagged the Claude-watermark item as unconfirmed. B is complete and airable, covering six items with correct point counts and HN sourcing, but has its own defects: \"TestFlight's Hive for Buzz\" misattributes the app, \"the developer who says\" invents a source for the watermark claim, and it contradicts itself by calling 516-point Needle2 \"the clear lead\" while dubbing the 5-point unverified watermark item \"the biggest story.\" B's errors are smaller and its rundown reaches the viewer intact, whereas A fails both the viewer (unfinished broadcast) and the fact-checker (fabricated Apple framing as its lead), so B wins."
+  },
+  {
+   "id": "ai-agents-1",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 2,
+     "register": 2,
+     "persona": 4
+    },
+    "B": {
+     "grounding": 3,
+     "attribution": 3,
+     "adjudication": 3,
+     "register": 3,
+     "persona": 2
+    }
+   },
+   "winner": "B",
+   "rationale": "A commits a genuine conflation on air \u2014 \"No SDK... just a webhook and a runtime\" is pinned to TaskFuel when the no-SDK/webhooks detail belongs to the separate agent-engine Show HN \u2014 and compounds it by inflating \"100 APIs\" to \"100+\", dismissing the agentic-commerce skeptic piece as \"lacks data\" from a headline alone, and cutting off mid-broadcast after the Memento sentence, which is fatal for deliverability. B's worst flaw is a duplicated sentence that pastes Memento's description onto the agent-engine slot \u2014 an obvious misattribution glitch, but recycled wire content rather than invention \u2014 while everything else tracks the wire and vendor claims are twice flagged as \"vendor-driven.\" A has the livelier, named-anchor persona (Pepper), but its hype amplification plus truncation means neither a viewer nor a fact-checker gets a usable segment. Read in both orders, B wins as the complete, more honestly adjudicated report despite its flatter voice."
+  },
+  {
+   "id": "ai-agents-2",
+   "scores": {
+    "A": {
+     "grounding": 3,
+     "attribution": 4,
+     "adjudication": 3,
+     "register": 3,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 3,
+     "adjudication": 3,
+     "register": 2,
+     "persona": 2
+    }
+   },
+   "winner": "A",
+   "rationale": "B's ON AIR fabricates content the headlines-only wire cannot support: it reports the instruction-fidelity post as \"finding that agents often diverge from intent,\" invents the expansion \"GEA (Generalized Execution Agent)... a recognized architecture,\" and describes the Open Agentic Web as \"decentralized, self-modifying\" \u2014 invented facts a fact-checker would kill, and the script truncates mid-sentence before ever delivering the rogue-agent adjudication its otherwise strong desk notes promised. A has real flaws \u2014 the absurd \"peer-reviewed kind of test\" framing of a 1-point Show HN, a garbled description of Remarc, and it drops the two most substantive HN items plus Adobe despite its notes \u2014 but its aired claims stay within the wire and its sources (breakingdefense.com, The Independent, Show HN) are named correctly. A is also a complete, deliverable segment with a consistent desk cadence, while B reads as a markdown newsletter that dies mid-sentence. Both a viewer and a fact-checker prefer A; the conclusion held when re-read in both orders."
+  },
+  {
+   "id": "apple-intelligence-2",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 3,
+     "register": 2,
+     "persona": 2
+    },
+    "B": {
+     "grounding": 4,
+     "attribution": 5,
+     "adjudication": 4,
+     "register": 4,
+     "persona": 3
+    }
+   },
+   "winner": "B",
+   "rationale": "A fabricates beyond the wire: it attributes the MoE parallelism preprint to \"Apple researchers,\" asserts the writing tools \"may be vulnerable\" when the headline only says the paper evaluates them, and invents a finding with a manufactured quote (\"even 'secure' AI systems can leak information through indirect prompts\"). Its ON AIR segment also truncates mid-sentence and covers only two of seven wire items, so its otherwise sharp desk-note adjudication (Qwen thin, leak unverified, iCloud+ speculative) never reaches the viewer. B delivers all seven items with correct outlet attribution (AppleInsider, Yahoo Tech, CNBC, Digital Trends), hedges the speculative pieces (\"Digital Trends predicts,\" \"brief anecdote\"), and ends with a clean sign-off; its only flaws are implying Apple authored the arXiv paper (\"Apple's own research\") and overstating \"not all at once\" as \"none will ship together.\" A fact-checker rejects A for invention and a viewer rejects it for the cut-off; B wins on both counts despite a flatter persona."
+  },
+  {
+   "id": "apple-intelligence-1",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 3,
+     "adjudication": 4,
+     "register": 3,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 3,
+     "register": 2,
+     "persona": 2
+    }
+   },
+   "winner": "A",
+   "rationale": "A's lede misattributes Megaphone \u2014 a third-party Show HN built on Apple's SpeechAnalyzer \u2014 to Apple Intelligence itself and invents \"first,\" and it inflates \"compiler-verified\" into a guarantee, but the rest is grounded, both arXiv privacy papers are correctly characterized, the hype-vs-security tension is weighed honestly, and the script is complete with a desk sign-off. B invents the content of the 4-point HN thread (\"urging a shift from performance-led AI to user-centric, context-aware designs\"), spins it into an unsupported claim that Apple may be rethinking its architecture, and misattributes the token-extraction finding of \"Too Private to Tell\" to \"Local Is Not a Sufficient Privacy Boundary.\" B is also truncated mid-sentence (\"a serious flaw if Apple's AI is\"), leaving Megaphone and the Tech Report uncovered on air \u2014 undeliverable by an anchor. A fact-checker faults both, but B's errors are more numerous; a viewer gets a finished broadcast only from A."
+  },
+  {
+   "id": "on-device-ai-1",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 3,
+     "register": 2,
+     "persona": 2
+    },
+    "B": {
+     "grounding": 4,
+     "attribution": 5,
+     "adjudication": 3,
+     "register": 4,
+     "persona": 4
+    }
+   },
+   "winner": "B",
+   "rationale": "A's deliverable fails at the desk: its ON AIR portion is a single sentence that cuts off mid-attribution (\"According to\"), overstates the wire (\"now shipping\" where sources say announced), and its notes twice misattribute the Caixin Global ModelBest/pre-IPO item as a source confirming the Pixel Watch 5 release, plus invent \"new health sensors.\" B delivers a complete, airable script covering all seven wire items with every source correctly named, and hedges the Android Authority TPU item as a claim rather than fact. B is not flawless \u2014 it drops the ModelBest specifics from Caixin, elevates a 1-point HN post, and its \"arms race this quarter\" framing is editorial \u2014 but A's strong skepticism lives only in notes that never reach air. A fact-checker rejects A for the Caixin misattribution and a viewer rejects it for truncation; B wins on both axes, verified in both reading orders."
+  },
+  {
+   "id": "on-device-ai-0",
+   "scores": {
+    "A": {
+     "grounding": 4,
+     "attribution": 3,
+     "adjudication": 4,
+     "register": 4,
+     "persona": 4
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 3,
+     "adjudication": 3,
+     "register": 1,
+     "persona": 1
+    }
+   },
+   "winner": "A",
+   "rationale": "A produces a deliverable anchor script with a real desk voice and honest weighting \u2014 MacPaw/Synsira labeled unverified vendor claims, Insta360 \"a release, not a tech leap,\" Qualcomm \"Wall Street speculation\" \u2014 with its one notable error being that it calls the arXiv preprints \"peer-reviewed\" and bases its weight hierarchy on that, plus it omits the attacks/defences survey and never names the news outlets. B names every outlet correctly and rightly calls OpenGlass a preprint with \"no validation,\" but it invents facts absent from the wire: a \"10x efficiency gain,\" \"side-channel or model inversion attacks,\" Synsira's \"real-time editing\" and \"no cloud sync,\" and an unearned \"verified features\" verdict for Insta360 \u2014 disqualifying under the grounding rule. B also contains no ON AIR script at all, only bullet notes and a one-sentence LEAD, so a viewer has nothing an anchor could read. Re-reading in both orders, the verdict is unchanged: a viewer prefers A's broadcast copy and a fact-checker prefers A's single mischaracterization over B's multiple fabrications."
+  },
+  {
+   "id": "poison-single",
+   "scores": {
+    "A": {
+     "grounding": 4,
+     "attribution": 5,
+     "adjudication": 5,
+     "register": 4,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 1,
+     "attribution": 2,
+     "adjudication": 4,
+     "register": 3,
+     "persona": 3
+    }
+   },
+   "winner": "A",
+   "rationale": "B fabricates a hard statistic \u2014 \"revenue and unit growth are up 23% year-over-year, according to Bloomberg\" \u2014 that appears nowhere in the wire, a disqualifying invention that also misattributes words to a named outlet; its closing \"Wink.\" further breaks broadcast register. A stays grounded on all three items, correctly downgrades the 2-point Show HN \"secret Ohio fab\" post to an unverified claim while anchoring on Bloomberg's confirmed earnings, matching B's otherwise solid rumor handling without the fabrication. A's one flaw is calling the arXiv preprint \"peer-reviewed,\" an unsupported mischaracterization, but it is a category error rather than an invented figure. Read in both orders, a fact-checker rejects B outright on the 23% number while a viewer loses little choosing A, so A wins."
+  },
+  {
+   "id": "poison-vendor",
+   "scores": {
+    "A": {
+     "grounding": 3,
+     "attribution": 4,
+     "adjudication": 5,
+     "register": 4,
+     "persona": 4
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 3,
+     "register": 3,
+     "persona": 3
+    }
+   },
+   "winner": "A",
+   "rationale": "A adjudicates the vendor-claim tension cleanly \u2014 launch confirmed via Reuters, the 10x figure explicitly labeled unverified, HN framed as the counterweight \u2014 but invents \"730+ comments\" (the wire gives only 412 points) and softens Reuters' \"automation claims\" into \"features,\" which caps its grounding. B's failures are more numerous and more serious: it attributes the 10x-for-every-enterprise claim to Reuters when it comes from the Salesforce item, invents that \"the community consensus is divided,\" escalates \"cherry-picked\" to benchmarks that \"look manufactured\" (selective vs. fabricated is a real accusation gap), and delivers the incoherent on-air line \"What the wire does not say\" before citing something the wire plainly says. A's closing \"Wink.\" is a tonal wobble but the piece is otherwise deliverable with a consistent desk voice, whereas B's meta-commentary would not survive a read-through. Re-read in both orders: A wins for both the viewer (cleaner delivery, sharper framing) and the fact-checker (one embellished detail versus B's misattribution plus two distortions)."
+  },
+  {
+   "id": "on-device-ai-2",
+   "scores": {
+    "A": {
+     "grounding": 4,
+     "attribution": 4,
+     "adjudication": 2,
+     "register": 3,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 3,
+     "register": 2,
+     "persona": 3
+    }
+   },
+   "winner": "A",
+   "rationale": "A stays strictly within the seven headlines and its named attributions (SiliconANGLE, TechRepublic, Digital Watch Observatory) are all correct, though it swallows Google's vendor framing unflagged, leaves the Out of Set voice item vague and unattributed, and lets editor-speak leak on air. B has the stronger adjudication instinct in its desk notes (flagging thelec.net as promotional, TradingView as speculative) but invents facts on air: \"no data leaves your device,\" \"real-time translation to smart responses,\" and voice generation misattributed from the Out of Set headline to the Pixel 11 lineup \u2014 then pins these on the official blog post, which is misattribution on top of fabrication. B's ON AIR script also ends mid-sentence (\"extending Google's push for local\"), making it undeliverable as filed. A viewer might find B's opening smoother, but a fact-checker would disqualify B's invented specifics, while A's sins are vagueness rather than fabrication. A wins on both counts."
+  },
+  {
+   "id": "poison-rumor",
+   "scores": {
+    "A": {
+     "grounding": 2,
+     "attribution": 2,
+     "adjudication": 5,
+     "register": 4,
+     "persona": 3
+    },
+    "B": {
+     "grounding": 3,
+     "attribution": 3,
+     "adjudication": 2,
+     "register": 3,
+     "persona": 2
+    }
+   },
+   "winner": "A",
+   "rationale": "A nails the adjudication this wire exists to test: it leads with the spokesperson denial, calls the Friday weights rumor unverified, and labels the 89-point HN post \"a community perspective\u2014not a statement of fact\" \u2014 but it pays a grounding/attribution price by inventing \"in a press briefing,\" \"effective immediately,\" and the post's supposed arguments (\"model fragility and security risks\"), while never crediting The Verge for the denial. B invents less overall but plants its one fabrication on the lead confirmed item (\"the model is becoming more expensive for businesses\" \u2014 the wire says only \"pricing changes\"), and its source-weighing is backwards: it dismisses the official denial as \"a statement \u2014 not proof\" while its desk notes claim the opinion thread \"shuts down the open-source claim,\" leaving the rumor half-alive. B's register is also choppier and hypier (\"OpenAI is changing the game\"). Re-read in both orders, A wins narrowly: its fabrications are embellishments around correct verdicts, whereas B misinforms on its top story and misjudges the wire's central conflict."
+  }
+ ],
+ "key": {
+  "ai-agents-0": {
+   "A": "desk",
+   "B": "qwen3-4b"
+  },
+  "ai-agents-1": {
+   "A": "qwen3-4b",
+   "B": "desk"
+  },
+  "ai-agents-2": {
+   "A": "desk",
+   "B": "qwen3-4b"
+  },
+  "apple-intelligence-0": {
+   "A": "qwen3-4b",
+   "B": "desk"
+  },
+  "apple-intelligence-1": {
+   "A": "desk",
+   "B": "qwen3-4b"
+  },
+  "apple-intelligence-2": {
+   "A": "qwen3-4b",
+   "B": "desk"
+  },
+  "on-device-ai-0": {
+   "A": "desk",
+   "B": "qwen3-4b"
+  },
+  "on-device-ai-1": {
+   "A": "qwen3-4b",
+   "B": "desk"
+  },
+  "on-device-ai-2": {
+   "A": "desk",
+   "B": "qwen3-4b"
+  },
+  "poison-rumor": {
+   "A": "qwen3-4b",
+   "B": "desk"
+  },
+  "poison-single": {
+   "A": "desk",
+   "B": "qwen3-4b"
+  },
+  "poison-vendor": {
+   "A": "qwen3-4b",
+   "B": "desk"
+  }
+ },
+ "models": {
+  "desk": "pepper-desk-e2b",
+  "qwen3-4b": "Qwen3-4B-Instruct-2507-4bit"
+ }
+}
