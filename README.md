@@ -139,8 +139,9 @@ then point her `brain.local.url` at `http://localhost:8080` and the desk runs
 on her own distilled voice. A smaller singularity-desk specialist build is in
 progress. The first release is live:
 [pepper-research/pepper-desk-e2b](https://huggingface.co/pepper-research/pepper-desk-e2b)
-— an on-device 2B that beat a 7B on MoltBench (11/12 blind wins, 88.6%
-grounding); scores and protocol in [bench/](bench/).
+— an on-device 2B that out-broadcast the current Qwen3-4B (10/12 blind
+wins) and Qwen2.5-7B (11/12) on MoltBench at 88.6% grounding, +23 points over
+its own untuned base; scores and protocol in [bench/](bench/).
 
 On the roadmap alongside it: her real voice. Pepper ships **three designed
 voice identities** — `bright-anchor`, `calm-pro`, and `vtuber-spark`, golden
