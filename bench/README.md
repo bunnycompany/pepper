@@ -57,7 +57,7 @@ the desk track: a model that charms while confabulating fails MoltBench.
 | **pepper-desk-e2b** | 2B (4.6B total) | **88.6%** | — |
 | Qwen3-4B-Instruct-2507 | 4B | 88.3% | **2/12** (desk 10/12, sign test p≈0.039) |
 | **gemma-4-12b-it** (her base family, 6× params; via LM Studio) | 12B | 74.3% | **10/12 for gemma** (desk 2/12) — the ceiling |
-| Qwen3.8-27B (via LM Studio, 8K reasoning budget) | 27B | 80.9% | deterministic only — judges pending |
+| Qwen3.8-27B (via LM Studio, 8K reasoning budget) | 27B | 80.9% | **11/12 for Qwen3.8** (desk 1/12 — its lone empty output) — the ceiling |
 | Qwen3.8-27B-uncensored (via LM Studio) | 27B | 70.5% | deterministic only |
 | prism-ml/bonsai-27b (via LM Studio) | 27B | 79.6% | deterministic only |
 | Qwen2.5-7B-Instruct | 7B | 77.5% | 1/12 (desk 11/12, p≈0.006) |
@@ -86,7 +86,13 @@ Readings, honestly stated:
   the honest claim is scoped: **best in her weight class; a 12B of her own
   lineage still out-broadcasts her.** Verdicts and rotation keys for all three
   judge rounds are checked into `bench/judgments/`.
-- **27B rows are deterministic-only and should be read with the caveat above:**
+- **The regex metric inverted the judges on both ceiling rows** (gemma-4-12b
+  and Qwen3.8-27B both score *below* the 2B on regex grounding and *above* it
+  by 2+ points on judged grounding). As of this run the deterministic score
+  is demoted to a screening filter — never a headline number — and every
+  leaderboard claim is a blind pairwise result with its verdicts in
+  `bench/judgments/`.
+- **Remaining 27B rows are deterministic-only and should be read with the caveat above:**
   every 27B scores below the 2B on the regex metric, which we now know rewards
   terseness; without a blind round they carry no pairwise claim. They needed an
   8,000-token budget to finish thinking (2,500 left them silent), which the
