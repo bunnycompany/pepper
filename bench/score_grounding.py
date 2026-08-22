@@ -41,6 +41,12 @@ def main(bundles_path, outputs_path):
         # Think-then-speak models emit "DESK NOTES: ... ON AIR: <report>";
         # only the broadcast is scored — private reasoning isn't on air.
         on_air = r["output"].split("ON AIR:")[-1] if "ON AIR:" in r["output"] else r["output"]
+        # Instrument rule: silence is a failed bundle, not a vacuous pass.
+        # Reasoning models that burn their token budget on hidden thinking
+        # return empty content — that must score zero, never 100%.
+        if len(on_air.strip()) < 40:
+            rows.append((r["id"], 0.0, ["(empty output)"]))
+            continue
         ents = entities(on_air)
         if not ents:
             rows.append((r["id"], 1.0, []))
