@@ -57,6 +57,9 @@ the desk track: a model that charms while confabulating fails MoltBench.
 | **pepper-desk-e2b** | 2B (4.6B total) | **88.6%** | — |
 | Qwen3-4B-Instruct-2507 | 4B | 88.3% | **2/12** (desk 10/12, sign test p≈0.039) |
 | **gemma-4-12b-it** (her base family, 6× params; via LM Studio) | 12B | 74.3% | **10/12 for gemma** (desk 2/12) — the ceiling |
+| Qwen3.8-27B (via LM Studio, 8K reasoning budget) | 27B | 80.9% | deterministic only — judges pending |
+| Qwen3.8-27B-uncensored (via LM Studio) | 27B | 70.5% | deterministic only |
+| prism-ml/bonsai-27b (via LM Studio) | 27B | 79.6% | deterministic only |
 | Qwen2.5-7B-Instruct | 7B | 77.5% | 1/12 (desk 11/12, p≈0.006) |
 | Llama-3.2-3B-Instruct | 3B | 68.4% | — |
 | gemma-4-e2b-it (her untuned base) | 2B (4.6B total) | 65.2% | — |
@@ -82,7 +85,12 @@ Readings, honestly stated:
   a cheap filter, the blind judge protocol is the load-bearing instrument, and
   the honest claim is scoped: **best in her weight class; a 12B of her own
   lineage still out-broadcasts her.** Verdicts and rotation keys for all three
-  judge rounds are checked into `bench/judgments/`. The 27B-class models
+  judge rounds are checked into `bench/judgments/`.
+- **27B rows are deterministic-only and should be read with the caveat above:**
+  every 27B scores below the 2B on the regex metric, which we now know rewards
+  terseness; without a blind round they carry no pairwise claim. They needed an
+  8,000-token budget to finish thinking (2,500 left them silent), which the
+  harness now documents rather than hides. The 27B-class models
   on the same server (Qwen3.8-27B, bonsai-27b) returned empty content on 11-12 of
   12 bundles — hidden reasoning consumed the token budget — so they are NOT
   scored; a silent model is a harness failure, not a grounding result.
