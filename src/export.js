@@ -173,16 +173,29 @@ export async function exportSite({ outDir = './pepper-site' } = {}) {
     console.log('  ' + c.red('✗') + ' audio/ — ' + String(e?.message || e));
   }
 
+  // A station with zero bulletins is dead air — flag it as an error (non-zero
+  // exit) and keep the deploy pitch off the screen until there is a show.
+  const nothingToBroadcast = bulletins.length === 0;
+  if (nothingToBroadcast) errors.push('no bulletins');
+
   console.log('');
+  if (nothingToBroadcast) {
+    console.log('  ' + c.bgRed(' NOTHING TO BROADCAST ') + ' '
+      + c.bold('0 bulletins — she has never gone to air.'));
+    console.log('  ' + c.dim('run `pepper now` (or `pepper start`) to sweep the wire, then re-export.'));
+    console.log('');
+  }
   if (errors.length) {
     console.log('  ' + c.red(`✗ ${errors.length} export step${errors.length === 1 ? '' : 's'} failed — do not deploy this output.`));
   }
   console.log('  ' + c.bold(`${files} files exported.`) + ' ' + c.dim('This is broadcast mode — a static MNN station.'));
   console.log('');
-  console.log('  deploy it on Cloudflare Pages:');
-  console.log('    ' + c.cyan(`npx wrangler pages deploy ${outDir}`));
-  console.log('    ' + c.dim('— or drag the folder into the dashboard: Workers & Pages → Create → Upload assets'));
-  console.log('');
+  if (!nothingToBroadcast) {
+    console.log('  deploy it on Cloudflare Pages:');
+    console.log('    ' + c.cyan(`npx wrangler pages deploy ${outDir}`));
+    console.log('    ' + c.dim('— or drag the folder into the dashboard: Workers & Pages → Create → Upload assets'));
+    console.log('');
+  }
   console.log('  ' + c.dim('MNN — all your models, all the time.'));
   console.log('');
 

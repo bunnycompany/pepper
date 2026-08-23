@@ -53,7 +53,7 @@ within seconds and goes on air with her first bulletin.
 | Command | What it does |
 |---|---|
 | `pepper` | Desk status and help |
-| `pepper start [--port N] [--open]` | Start the studio server |
+| `pepper start [--port N] [--open\|--no-open]` | Start the studio server |
 | `pepper open` | Open the newsroom in your browser |
 | `pepper status` | Show topics, brain tier, last sweep |
 | `pepper add <topic> [--lens news,hn,arxiv]` | Track a new beat |
@@ -62,7 +62,7 @@ within seconds and goes on air with her first bulletin.
 | `pepper now` | Run a sweep immediately |
 | `pepper brief [--json\|--speak]` | Latest bulletin in the terminal (`--speak` uses macOS `say`) |
 | `pepper ask <question>` | Ask Pepper about what she's tracking |
-| `pepper research <question>` | Deep dive: multi-angle sweep → on-device desk report, filed as a bulletin ([Siri bridge](docs/SIRI.md)) |
+| `pepper research <question> [--json]` | Deep dive: multi-angle sweep → on-device desk report, filed as a bulletin ([Siri bridge](docs/SIRI.md)) |
 | `pepper voice install\|status\|uninstall` | Her real voice: local TTS tier, rendered per bulletin ([docs](docs/VOICE.md)) |
 | `pepper export [--out dir]` | Export the static broadcast site |
 | `pepper doctor` | Check node, brain, home dir, port, daemon |

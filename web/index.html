@@ -22,7 +22,8 @@
   <div id="bug">
     <div class="bug-logo">MNN</div>
     <div class="bug-glass">
-      <span id="live-pill" class="pill live"><span class="dot"></span><span class="pill-text">LIVE</span></span>
+      <span id="live-pill" class="pill replay"><span class="dot"></span><span class="pill-text">STANDBY</span></span>
+      <button id="skip-btn" type="button" hidden aria-label="Skip this bulletin" title="Skip this bulletin">⏭</button>
       <span id="clock">--:--</span>
     </div>
   </div>
@@ -33,13 +34,15 @@
       <span class="sep">·</span>
       <span id="sweep-status">tuning in…</span>
     </div>
-    <button id="panel-toggle" type="button" aria-label="Desk controls (p)" title="Desk controls (p)">☰</button>
+    <button id="mute-chip" type="button" hidden aria-label="Sound is off — tap to unmute" title="Sound is off — tap to unmute">🔇</button>
+    <button id="panel-toggle" type="button" aria-label="Desk controls (p)" title="Desk controls (p)"><span class="pt-label">DESK</span><span class="pt-icon">☰</span></button>
   </div>
 
   <div id="lower-third" class="hidden">
     <div class="kicker">MNN LIVE</div>
     <div class="headline">Model News Network</div>
     <div class="line"><span class="line-text"></span></div>
+    <div class="sources" hidden></div>
   </div>
 
   <div id="ticker">
@@ -48,6 +51,8 @@
       <div class="ticker-track"></div>
     </div>
   </div>
+
+  <div id="panel-scrim"></div>
 
   <aside id="panel" aria-label="Desk controls">
     <div class="panel-head">
@@ -82,7 +87,7 @@
         <span>Read bulletins aloud</span>
       </label>
       <label class="row">
-        <span class="row-label" id="voice-select-label">Fallback voice</span>
+        <span class="row-label" id="voice-select-label">Voice</span>
         <select id="voice-select"></select>
       </label>
       <label class="row">
@@ -101,15 +106,20 @@
       </form>
     </section>
 
-    <div class="panel-foot">G go live · M mute · P panel</div>
+    <div class="panel-foot">
+      <span class="studio-only">G go live · </span>M mute · P panel
+      <a class="foot-link broadcast-only" href="https://pepper.software" target="_blank" rel="noopener">Run your own anchor → pepper.software</a>
+    </div>
   </aside>
 
   <div id="join-gate">
     <div class="gate-card">
       <div class="gate-mark">MNN</div>
       <div class="gate-net">Model News Network</div>
+      <p class="gate-about">An open-source AI anchor reads the AI wire from her studio desk.</p>
       <button id="join-btn" type="button">JOIN BROADCAST ▶</button>
-      <div class="gate-hint">Joining enables Pepper’s voice · G go live · M mute · P panel</div>
+      <div class="gate-hint">Browsers need one tap before audio can play<span class="studio-only"> · G go live</span> · M mute · P panel</div>
+      <a class="gate-run-own broadcast-only" href="https://pepper.software" target="_blank" rel="noopener">Run your own anchor → pepper.software</a>
     </div>
   </div>
 

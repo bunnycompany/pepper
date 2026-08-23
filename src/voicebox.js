@@ -16,7 +16,7 @@
 //   <pkg>/voices/transcripts.json reference transcripts per identity
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { home, loadConfig, paths, PKG_ROOT } from './config.js';
 import { log } from './log.js';
@@ -117,14 +117,36 @@ function modelId() {
   return m && typeof m.model === 'string' && m.model.trim() ? m.model.trim() : DEFAULT_MODEL;
 }
 
+// The identities that actually shipped: one golden clip per <name>.wav.
+function shippedIdentities() {
+  try {
+    const names = readdirSync(join(PKG_ROOT, 'voices'))
+      .filter((f) => f.endsWith('.wav'))
+      .map((f) => f.slice(0, -4))
+      .sort();
+    if (names.length) return names;
+  } catch {}
+  return [DEFAULT_IDENTITY];
+}
+
+let warnedIdentity = ''; // last unknown voice.identity we warned about
+
 // Configured identity, path-safe, with a shipped golden clip — else default.
+// An unknown value falls back like before, but says so once instead of
+// silently rendering every bulletin in the default voice.
 function identityName() {
   let id = '';
   try {
     id = String(loadConfig()?.voice?.identity || '').trim();
   } catch {}
-  if (!/^[a-z0-9][a-z0-9_-]*$/i.test(id)) return DEFAULT_IDENTITY;
-  return existsSync(refClip(id)) ? id : DEFAULT_IDENTITY;
+  if (!id || id === DEFAULT_IDENTITY) return DEFAULT_IDENTITY;
+  if (/^[a-z0-9][a-z0-9_-]*$/i.test(id) && existsSync(refClip(id))) return id;
+  if (warnedIdentity !== id) {
+    warnedIdentity = id;
+    log.warn(`voicebox: voice.identity "${id}" has no golden clip — using ${DEFAULT_IDENTITY};`
+      + ' valid: ' + shippedIdentities().join(', '));
+  }
+  return DEFAULT_IDENTITY;
 }
 
 function refClip(identity) {

@@ -1,8 +1,10 @@
 import http from 'node:http';
-import { existsSync, statSync, createReadStream, readFileSync } from 'node:fs';
+import {
+  existsSync, statSync, createReadStream, readFileSync, writeFileSync, renameSync, unlinkSync,
+} from 'node:fs';
 import { join, normalize, extname, dirname } from 'node:path';
 import { createRequire } from 'node:module';
-import { loadConfig, paths, VERSION, ensureHome, PKG_ROOT } from './config.js';
+import { loadConfig, configIssues, paths, VERSION, ensureHome, PKG_ROOT } from './config.js';
 import { log } from './log.js';
 import * as store from './store.js';
 
@@ -60,6 +62,12 @@ export function createPepperServer(opts = {}) {
   const cfg = loadConfig();
   const explicitPort = opts.port != null;
   let port = opts.port ?? cfg.port ?? 4747;
+  // Effective sweep interval: same clamp schedule() always applied, computed
+  // once so the banner and /api/state can report reality, not the raw config.
+  const intervalMins = Math.max(3, Number(cfg.intervalMinutes) || 15);
+  if (intervalMins !== Number(cfg.intervalMinutes)) {
+    log.warn(`intervalMinutes ${JSON.stringify(cfg.intervalMinutes)} is invalid or below the 3-minute minimum — sweeping every ${intervalMins} minutes instead`);
+  }
   const vendors = vendorRoots();
   const sse = new Set();
   const state = {
@@ -182,8 +190,7 @@ export function createPepperServer(opts = {}) {
 
   function schedule() {
     clearTimeout(state.timer);
-    const mins = Math.max(3, Number(cfg.intervalMinutes) || 15);
-    const delay = state.lastCycleAt ? mins * 60_000 : 2_500;
+    const delay = state.lastCycleAt ? intervalMins * 60_000 : 2_500;
     state.nextCycleAt = new Date(Date.now() + delay).toISOString();
     state.timer = setTimeout(() => doCycle(), delay);
     state.timer.unref?.();
@@ -231,7 +238,8 @@ export function createPepperServer(opts = {}) {
           version: VERSION,
           site: cfg.site,
           voice: cfg.voice,
-          intervalMinutes: cfg.intervalMinutes,
+          intervalMinutes: intervalMins,
+          configIssues: configIssues(),
           topics: store.listTopics(),
           brain: await brainStatus(),
           researching: state.researching,
@@ -323,6 +331,15 @@ export function createPepperServer(opts = {}) {
           beats = String(interests).split(/,|\band\b|;|\n/)
             .map((s) => s.trim()).filter((s) => s && s.length <= 40).slice(0, 6);
         }
+        if (!beats.length) {
+          // No brain and no list punctuation: a plain sentence must still
+          // produce a beat — she invited "plain words are fine".
+          const bare = String(interests).trim()
+            .replace(/^(i\s+(want|would like|'d like)\s+to\s+(follow|track|watch|see)|follow|track|watch|news\s+(about|on)|keep\s+(an\s+)?eye\s+on)\s+/i, '')
+            .replace(/[.!?]+$/, '').trim();
+          const clamped = bare.length <= 40 ? bare : bare.slice(0, 40).replace(/\s+\S*$/, '');
+          if (clamped) beats = [clamped];
+        }
         const added = [];
         for (const b of beats) {
           try { added.push(store.addTopic(b).name); } catch { /* dup — fine */ }
@@ -388,6 +405,28 @@ export function createPepperServer(opts = {}) {
   const ping = setInterval(() => { for (const res of sse) res.write(':ping\n\n'); }, 25_000);
   ping.unref?.();
 
+  // ~/.pepper/run.json lets the CLI find a server bound off cfg.port (e.g.
+  // `pepper start --port 9000`). Written atomically; a stale file is harmless
+  // because discoverServer verifies /healthz before trusting it.
+  function writeRunFile() {
+    try {
+      const tmp = paths.run + '.tmp';
+      writeFileSync(tmp, JSON.stringify({
+        port, pid: process.pid, startedAt: new Date().toISOString(),
+      }, null, 2) + '\n');
+      renameSync(tmp, paths.run);
+    } catch {}
+  }
+
+  function removeRunFile() {
+    try {
+      // Leave the file alone if another live instance owns it.
+      const info = JSON.parse(readFileSync(paths.run, 'utf8'));
+      if (info && typeof info === 'object' && info.pid !== process.pid) return;
+    } catch {}
+    try { unlinkSync(paths.run); } catch {}
+  }
+
   function listen() {
     return new Promise((resolve, reject) => {
       const tryPort = (candidate, left) => {
@@ -400,6 +439,7 @@ export function createPepperServer(opts = {}) {
         });
         server.listen(candidate, '127.0.0.1', () => {
           port = server.address().port;
+          writeRunFile();
           schedule();
           resolve({ port });
         });
@@ -411,6 +451,7 @@ export function createPepperServer(opts = {}) {
   function stop() {
     clearTimeout(state.timer);
     clearInterval(ping);
+    removeRunFile();
     for (const res of sse) { try { res.end(); } catch {} }
     server.close();
   }
@@ -422,6 +463,7 @@ export function createPepperServer(opts = {}) {
     doCycle,
     state,
     cfg,
+    effectiveIntervalMinutes: intervalMins,
     get port() { return port; },
   };
 }

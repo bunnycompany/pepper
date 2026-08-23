@@ -2,7 +2,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { loadConfig, home, PKG_ROOT, VERSION } from '../src/config.js';
+import { loadConfig, home, paths, DEFAULTS, PKG_ROOT, VERSION } from '../src/config.js';
 import * as store from '../src/store.js';
 import { c } from '../src/log.js';
 import { renderBrief, doctor, discoverServer, wrapText } from '../src/terminal.js';
@@ -30,7 +30,8 @@ function parseArgs(argv) {
 
 const { args, flags } = parseArgs(process.argv.slice(2));
 let cmd = args[0] || '';
-if (flags.help || cmd === '-h') cmd = 'help';
+// `-h` anywhere means help — `pepper add -h` must never create a beat named "-h".
+if (flags.help || args.includes('-h')) cmd = 'help';
 if (flags.version || cmd === '-v') cmd = 'version';
 
 // ---------- small helpers ----------
@@ -103,7 +104,8 @@ function helpText() {
     '',
     '  ' + c.bold('usage:') + ' pepper <command> [options]',
     '',
-    '    start ' + d('[--port N] [--open]') + '      go on air — studio server + newsroom',
+    '    start ' + d('[--port N] [--open|--no-open]') + '',
+    '                                  go on air — studio server + newsroom',
     '    open                          open the studio in your browser',
     '    status                        is she on the desk?',
     '    add <topic…> ' + d('[--lens news,hn,arxiv]') + '',
@@ -113,13 +115,16 @@ function helpText() {
     '    now                           sweep the wire right now',
     '    brief ' + d('[--json|--speak]') + '        latest bulletin, right in the terminal',
     '    ask <question…>               ask Pepper about her beats',
-    '    research <question…>          deep dive: multi-angle sweep → desk report',
+    '    research <question…> ' + d('[--json]') + ' deep dive: multi-angle sweep → desk report',
     '    export ' + d('[--out dir]') + '            static broadcast site (Cloudflare Pages ready)',
+    '    config ' + d('[get <path> | set <path> <value>]'),
+    '                                  her settings — list, read, or change',
     '    doctor                        studio health check',
     '    daemon install|uninstall|status',
     '                                  keep her on air 24/7 (macOS launchd)',
     '    voice install|status|uninstall',
     '                                  her real voice — on-device TTS (Apple Silicon)',
+    '    voice use <identity>          switch her voice — bright-anchor, calm-pro, …',
     '    version · help',
     '',
     '  ' + d('MNN — all your models, all the time.'),
@@ -220,9 +225,37 @@ async function brainLine() {
 }
 
 async function cmdStart() {
+  if (flags.port != null) {
+    const p = Number(flags.port);
+    if (typeof flags.port === 'boolean' || !Number.isInteger(p) || p < 1 || p > 65535) {
+      console.log('  ' + c.red('✗') + ' --port must be a number 1-65535'
+        + (typeof flags.port === 'boolean' ? ' — none given' : ` (got "${flags.port}")`));
+      process.exitCode = 1;
+      return;
+    }
+  }
+  // She may already be on the desk — don't quietly start a second studio.
+  const running = await discoverServer(loadConfig());
+  if (running && (flags.port == null || Number(flags.port) === running.port)) {
+    console.log('  🌶 ' + c.bold('already on air') + ' — ' + c.cyan(running.url));
+    console.log('  ' + c.dim('`pepper open` to watch, or `pepper start --port N` for a second studio.'));
+    return;
+  }
   const { createPepperServer } = await import('../src/server.js');
   const srv = createPepperServer(flags.port != null ? { port: Number(flags.port) } : {});
-  const { port } = await srv.listen();
+  let port;
+  try {
+    ({ port } = await srv.listen());
+  } catch (e) {
+    if (e && e.code === 'EADDRINUSE') {
+      const p = e.port || (flags.port != null ? Number(flags.port) : Number(srv.cfg.port) || 4747);
+      console.log('  ' + c.red('✗') + ` port ${p} is taken — is another Pepper on air? try \`pepper status\`, or pick a free one with --port.`);
+      try { srv.stop(); } catch {}
+      process.exitCode = 1;
+      return;
+    }
+    throw e;
+  }
   const url = `http://127.0.0.1:${port}`;
   const topics = store.listTopics();
   const brain = await brainLine();
@@ -287,6 +320,7 @@ async function cmdStatus() {
     console.log('');
     console.log('  🌶 ' + c.bold('Pepper is off the air.'));
     const topics = store.listTopics();
+    console.log('     brain     ' + await brainLine());
     console.log('     beats     ' + (topics.length
       ? truncate(topics.map((t) => t.name).join(', '), 60)
       : c.dim('none — pepper add "quantum computing"')));
@@ -294,6 +328,9 @@ async function cmdStatus() {
     console.log('     bulletin  ' + (b ? b.id + ' ' + c.dim('(' + fmtWhen(b.at) + ')') : c.dim('none yet')));
     console.log('     ' + c.dim('start the studio with `pepper start`'));
     console.log('');
+    // The brain probe may have spawned the sidecar — don't let it hold the exit.
+    try { (await import('../src/brain/index.js')).getBrain().stop(); } catch {}
+    exitSoon(0);
     return;
   }
   let st = null;
@@ -337,6 +374,11 @@ function cmdAdd() {
     process.exitCode = 1;
     return;
   }
+  if (name.startsWith('-')) {
+    console.log('  ' + c.red('✗') + ` a topic can't start with "-" — that looks like a flag. see \`pepper help\`.`);
+    process.exitCode = 1;
+    return;
+  }
   let lenses;
   if (flags.lens != null) {
     const VALID = ['news', 'hn', 'arxiv'];
@@ -362,6 +404,11 @@ function cmdDrop() {
   const name = args.slice(1).join(' ').trim();
   if (!name) {
     console.log('  usage: pepper drop <topic>');
+    process.exitCode = 1;
+    return;
+  }
+  if (name.startsWith('-')) {
+    console.log('  ' + c.red('✗') + ` a topic can't start with "-" — that looks like a flag. see \`pepper topics\` for what's on the desk.`);
     process.exitCode = 1;
     return;
   }
@@ -422,7 +469,15 @@ async function cmdNow() {
 async function cmdBrief() {
   const b = store.latestBulletin();
   if (!b) {
-    console.log('  ' + c.dim('no bulletins yet — she hasn\'t gone to air. Try `pepper now` or `pepper start`.'));
+    if (flags.json) {
+      // Machine consumers get parseable stdout and a real failure code;
+      // the human hint goes to stderr so `| jq` stays clean.
+      console.log('null');
+      console.error('  no bulletins yet — try `pepper now` or `pepper start`.');
+      process.exitCode = 1;
+    } else {
+      console.log('  ' + c.dim('no bulletins yet — she hasn\'t gone to air. Try `pepper now` or `pepper start`.'));
+    }
     return;
   }
   if (flags.json) {
@@ -481,6 +536,8 @@ async function cmdAsk() {
   }
   const found = await discoverServer(loadConfig());
   let result = null;
+  let failure = null;
+  let brainProblem = !found; // inline asks fail for brain reasons; server asks may not
   if (found) {
     try {
       const res = await fetch(found.url + '/api/ask', {
@@ -489,20 +546,34 @@ async function cmdAsk() {
         body: JSON.stringify({ q }),
       });
       if (res.ok) result = await res.json();
-    } catch {}
+      else if (res.status === 503) {
+        failure = `the studio at ${found.url} is on air, but her brain is off there (HTTP 503).`;
+        brainProblem = true;
+      } else {
+        failure = `the studio at ${found.url} answered HTTP ${res.status} — try \`pepper status\`.`;
+      }
+    } catch (e) {
+      failure = `could not reach the studio at ${found.url} (${String(e?.cause?.message || e?.message || e)}) — mid-restart? try \`pepper status\`.`;
+    }
   } else {
     try {
       const { getBrain } = await import('../src/brain/index.js');
       const brain = getBrain();
       result = await brain.ask(q);
       try { brain.stop?.(); } catch {}
-    } catch {}
+    } catch (e) {
+      failure = 'her brain errored: ' + String(e?.message || e);
+    }
   }
   if (result && result.answer) {
     pepperSays(result.answer, result.mode);
   } else {
-    console.log('  ' + c.dim('Pepper\'s brain is off — no Foundation Models, no local LLM configured.'));
-    console.log('  ' + c.dim('set `brain.local.url` in ~/.pepper/config.json, or run on Apple Silicon with Apple Intelligence.'));
+    console.log('  ' + c.red('✗') + ' ' + (failure || 'no answer — her brain is off.'));
+    if (brainProblem) {
+      console.log('  ' + c.dim('brain: ') + await brainLine());
+      console.log('  ' + c.dim('for a local LLM, set `brain.local.url` in ' + paths.config
+        + ' — or run on Apple Silicon with Apple Intelligence.'));
+    }
     process.exitCode = 1;
   }
   exitSoon(process.exitCode || 0);
@@ -512,6 +583,110 @@ async function cmdExport() {
   const { exportSite } = await import('../src/export.js');
   const r = await exportSite({ outDir: typeof flags.out === 'string' ? flags.out : './pepper-site' });
   if (r?.errors?.length) process.exitCode = 1;
+}
+
+// ---------- config (dot-path settings, no hand-authored JSON) ----------
+
+function flattenConfig(obj, prefix = '') {
+  const out = {};
+  for (const [k, v] of Object.entries(obj || {})) {
+    const p = prefix ? prefix + '.' + k : k;
+    if (v && typeof v === 'object' && !Array.isArray(v)) Object.assign(out, flattenConfig(v, p));
+    else out[p] = v;
+  }
+  return out;
+}
+
+function configValueAt(obj, dotPath) {
+  let cur = obj;
+  for (const k of String(dotPath).split('.')) {
+    if (cur == null || typeof cur !== 'object') return undefined;
+    cur = cur[k];
+  }
+  return cur;
+}
+
+function fmtConfigValue(v) {
+  if (typeof v === 'string') return v === '' ? c.dim('(empty)') : v;
+  return JSON.stringify(v);
+}
+
+async function cmdConfig() {
+  const sub = args[1];
+  // Lazy import: setConfigValue/configIssues live next to loadConfig.
+  const { setConfigValue, configIssues } = await import('../src/config.js');
+  const knownPaths = Object.keys(flattenConfig(DEFAULTS));
+
+  if (!sub) {
+    const eff = flattenConfig(loadConfig());
+    let fileCfg = null;
+    try { fileCfg = JSON.parse(readFileSync(paths.config, 'utf8')); } catch {}
+    const fromFile = flattenConfig(fileCfg || {});
+    console.log('');
+    console.log('  🌶 ' + c.bold('her settings') + c.dim(' — ' + paths.config
+      + (existsSync(paths.config) ? '' : ' (not written yet — all defaults)')));
+    console.log('');
+    const width = Math.max(...Object.keys(eff).map((k) => k.length));
+    for (const [k, v] of Object.entries(eff)) {
+      const src = k in fromFile ? 'config.json' : 'default';
+      console.log('     ' + k.padEnd(width + 2) + fmtConfigValue(v) + '  ' + c.dim('(' + src + ')'));
+    }
+    for (const issue of (await configIssues()) || []) {
+      console.log('     ' + (issue.severity === 'error' ? c.red('✗') : c.yellow('!')) + ' ' + issue.message);
+    }
+    console.log('');
+    console.log('  ' + c.dim('change one: `pepper config set <path> <value>` — e.g. `pepper config set intervalMinutes 30`'));
+    console.log('');
+    return;
+  }
+
+  if (sub === 'get') {
+    const path = String(args[2] || '').trim();
+    if (!path) {
+      console.log('  usage: pepper config get <path>   ' + c.dim('(e.g. intervalMinutes, voice.identity)'));
+      process.exitCode = 1;
+      return;
+    }
+    const v = configValueAt(loadConfig(), path);
+    if (v === undefined) {
+      console.log('  ' + c.red('✗') + ` no setting "${path}" — known: ` + knownPaths.join(', '));
+      process.exitCode = 1;
+      return;
+    }
+    console.log(typeof v === 'string' ? v : JSON.stringify(v));
+    return;
+  }
+
+  if (sub === 'set') {
+    const path = String(args[2] || '').trim();
+    const rawParts = args.slice(3);
+    if (!path || !rawParts.length) {
+      console.log('  usage: pepper config set <path> <value>   ' + c.dim('(e.g. pepper config set voice.identity calm-pro)'));
+      process.exitCode = 1;
+      return;
+    }
+    const raw = rawParts.join(' ');
+    // JSON when it parses (numbers, booleans, nulls), plain string otherwise.
+    let value = raw;
+    try { value = JSON.parse(raw); } catch {}
+    const r = await setConfigValue(path, value);
+    if (!r || !r.ok) {
+      console.log('  ' + c.red('✗') + ' ' + String(r?.error || 'could not save that setting'));
+      process.exitCode = 1;
+      return;
+    }
+    if (r.warning && !knownPaths.includes(r.path)) {
+      console.log('  ' + c.yellow('!') + ' ' + r.warning + c.dim(' — known: ' + knownPaths.join(', ')));
+    }
+    console.log('  ' + c.green('✓') + ' ' + r.path + ' = ' + fmtConfigValue(r.value));
+    if (await discoverServer(loadConfig())) {
+      console.log('  ' + c.dim('the studio is on air — restart `pepper start` to apply.'));
+    }
+    return;
+  }
+
+  console.log('  usage: pepper config [get <path> | set <path> <value>]');
+  process.exitCode = 1;
 }
 
 async function cmdDaemon() {
@@ -739,13 +914,55 @@ function cmdVoiceUninstall() {
   console.log('  ' + c.dim('  the newsroom falls back to browser TTS.'));
 }
 
+// The identities she ships with — one golden clip per voice in voices/.
+function shippedIdentities() {
+  try {
+    return readdirSync(join(PKG_ROOT, 'voices'))
+      .filter((f) => f.endsWith('.wav'))
+      .map((f) => f.slice(0, -4))
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+async function cmdVoiceUse() {
+  const identity = String(args[2] || '').trim();
+  const avail = shippedIdentities();
+  const current = loadConfig().voice?.identity || 'bright-anchor';
+  if (!identity) {
+    console.log('  usage: pepper voice use <identity>');
+    if (avail.length) {
+      console.log('  ' + c.dim('identities: ' + avail.map((v) => (v === current ? v + ' (current)' : v)).join(', ')));
+    }
+    process.exitCode = 1;
+    return;
+  }
+  if (!avail.includes(identity)) {
+    console.log('  ' + c.red('✗') + ` no golden clip for "${identity}" (voices/${identity}.wav)`
+      + ' — identities: ' + (avail.join(', ') || 'none shipped'));
+    process.exitCode = 1;
+    return;
+  }
+  const { setConfigValue } = await import('../src/config.js');
+  const r = await setConfigValue('voice.identity', identity);
+  if (!r || !r.ok) {
+    console.log('  ' + c.red('✗') + ' ' + String(r?.error || 'could not save voice.identity'));
+    process.exitCode = 1;
+    return;
+  }
+  console.log('  ' + c.green('✓') + ' she reads as ' + c.bold(identity) + ' now'
+    + c.dim(' — new bulletins render with it (identity is read per render, no restart needed).'));
+}
+
 async function cmdVoice() {
   const sub = args[1];
   if (sub === 'install') await cmdVoiceInstall();
   else if (sub === 'status') cmdVoiceStatus();
   else if (sub === 'uninstall') cmdVoiceUninstall();
+  else if (sub === 'use') await cmdVoiceUse();
   else {
-    console.log('  usage: pepper voice install|status|uninstall');
+    console.log('  usage: pepper voice install|status|uninstall|use <identity>');
     process.exitCode = 1;
   }
 }
@@ -769,6 +986,7 @@ async function main() {
     case 'ask': await cmdAsk(); break;
     case 'research': await cmdResearch(); break;
     case 'export': await cmdExport(); break;
+    case 'config': await cmdConfig(); break;
     case 'doctor':
       await doctor();
       exitSoon(0);

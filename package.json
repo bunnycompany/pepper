@@ -1,6 +1,6 @@
 {
   "name": "@pepperchan/pepper",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Pepper — MNN's 24/7 on-device research anchor. She tracks your topics, writes the bulletin with Apple Foundation Models, and reads it from a 3D newsroom.",
   "type": "module",
   "license": "AGPL-3.0-only",

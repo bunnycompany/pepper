@@ -32,17 +32,39 @@ function fmtWhen(iso) {
 
 // ---------- server discovery (shared by CLI + doctor) ----------
 
+async function probeStudio(port) {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/healthz`, {
+      signal: AbortSignal.timeout(400),
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    if (j && j.ok === true) return { port, url: `http://127.0.0.1:${port}`, version: j.version };
+  } catch {}
+  return null;
+}
+
 export async function discoverServer(cfg = loadConfig()) {
+  // Fast path: the server records {port, pid, startedAt} in run.json once it
+  // binds — so a studio on a non-default port (start --port 9000) is still
+  // found. /healthz is the trust gate: a stale file after a crash is harmless.
+  try {
+    const run = JSON.parse(readFileSync(join(home(), 'run.json'), 'utf8'));
+    const port = Number(run?.port);
+    const pid = Number(run?.pid);
+    let alive = true;
+    if (Number.isInteger(pid) && pid > 0) {
+      try { process.kill(pid, 0); } catch (e) { alive = e?.code !== 'ESRCH'; }
+    }
+    if (alive && Number.isInteger(port) && port > 0 && port < 65536) {
+      const found = await probeStudio(port);
+      if (found) return found;
+    }
+  } catch {}
   const base = Number(cfg.port) || 4747;
   for (let p = base; p <= base + 10; p++) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${p}/healthz`, {
-        signal: AbortSignal.timeout(400),
-      });
-      if (!res.ok) continue;
-      const j = await res.json();
-      if (j && j.ok === true) return { port: p, url: `http://127.0.0.1:${p}`, version: j.version };
-    } catch {}
+    const found = await probeStudio(p);
+    if (found) return found;
   }
   return null;
 }

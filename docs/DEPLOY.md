@@ -16,6 +16,21 @@ their own TTS. Any static host works — this guide uses Cloudflare Pages.
 
 She's live at `https://<project>.pages.dev` a few seconds later.
 
+## Name your station
+
+The exported site ships with the default branding — `MNN — Model News Network`
+in the browser tab and on the bug. Make it yours before exporting:
+
+```sh
+pepper config set site.title "KPEP — Pepper's Public Wire"
+pepper config set site.tagline "Your beat. Every hour."
+pepper export
+```
+
+(Or set `site.title` / `site.tagline` in `~/.pepper/config.json` by hand.)
+The export picks the new name up immediately; an already-running local studio
+reads config once at start, so restart `pepper start` to see it there too.
+
 ## Option B — wrangler CLI
 
 ```sh

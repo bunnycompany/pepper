@@ -5,7 +5,8 @@ import { parseFeed } from './rss.js';
 // ranked, covers arXiv + PubMed/bioRxiv/medRxiv, and doesn't rate-limit the
 // way arXiv's API does. Fallback: the classic arXiv Atom API, throttled to
 // one call per 3.5s with a cooldown after any failure (arXiv 429s bursts).
-// fetchTopic(query) → Item[] (without id/topic/seenAt); [] on any failure.
+// fetchTopic(query) → Item[] (without id/topic/seenAt); [] when both backends
+// answered but had nothing, null when neither could be reached.
 
 const FC_URL = 'https://api.firecrawl.dev/v2/search/research/papers';
 
@@ -50,9 +51,11 @@ let lastArxivCall = 0;
 let arxivCooldownUntil = 0;
 const sleep = (ms) => new Promise((r) => { setTimeout(r, ms).unref?.(); });
 
+// → Item[] on a successful fetch (possibly empty), null on failure or while
+// cooling down from one.
 async function viaArxivApi(query) {
   const now = Date.now();
-  if (now < arxivCooldownUntil) return [];
+  if (now < arxivCooldownUntil) return null;
   const wait = 3500 - (now - lastArxivCall);
   if (wait > 0) await sleep(wait);
   lastArxivCall = Date.now();
@@ -63,7 +66,7 @@ async function viaArxivApi(query) {
   if (!xml) {
     // Any failure (429s included) → back off for 10 minutes.
     arxivCooldownUntil = Date.now() + 10 * 60_000;
-    return [];
+    return null;
   }
   const items = [];
   for (const e of parseFeed(xml)) {
@@ -84,8 +87,12 @@ export async function fetchTopic(query) {
   try {
     const primary = await viaResearchIndex(query);
     if (primary && primary.length) return primary;
-    return await viaArxivApi(query);
+    const secondary = await viaArxivApi(query);
+    if (secondary) return secondary;
+    // arXiv unreachable: an empty-but-successful Research Index answer still
+    // counts as "the wire is quiet"; two failures count as a source error.
+    return primary;
   } catch {
-    return [];
+    return null;
   }
 }

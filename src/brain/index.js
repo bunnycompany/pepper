@@ -346,11 +346,14 @@ function runCmd(cmd, args, timeoutMs) {
 
 // ---- the brain ----
 
+const PREFER_TIERS = ['foundation', 'local', 'fallback'];
+
 class Brain {
   #sidecar = new Sidecar();
   #queue = Promise.resolve();
   #buildPromise = null;
   #probe = null; // { ok, reason?, at }
+  #warnedPrefer = ''; // last unrecognized brain.prefer value we warned about
 
   // Serialize sidecar requests: one in flight at a time.
   #enqueue(fn) {
@@ -400,7 +403,8 @@ class Brain {
       if (gate.error || gate.status !== 0) {
         return { ok: false, reason: 'developer tools missing — run `xcode-select --install`' };
       }
-      log.info('brain: building sidecar (first run or source changed)…');
+      log.info('brain: building her on-device brain (~20s, one time)…');
+      const buildStart = Date.now();
       const res = await runCmd(
         'swiftc',
         ['-parse-as-library', '-O', src, '-o', paths.brainBin],
@@ -418,6 +422,7 @@ class Brain {
         return { ok: false, reason: res.reason || 'swiftc build failed (see brain/build.log)' };
       }
       try { writeFileSync(paths.brainFingerprint, fp + '\n'); } catch {}
+      log.info(`brain: on-device brain ready (built in ${Math.round((Date.now() - buildStart) / 1000)}s)`);
       return { ok: true };
     } catch (e) {
       return { ok: false, reason: 'build error: ' + e.message };
@@ -467,7 +472,20 @@ class Brain {
   async #mode() {
     let cfg = null;
     try { cfg = loadConfig(); } catch {}
-    const prefer = cfg?.brain?.prefer || 'foundation';
+    const rawPrefer = String(cfg?.brain?.prefer || 'foundation').trim();
+    let prefer = rawPrefer;
+    let preferNote;
+    if (!PREFER_TIERS.includes(prefer)) {
+      // A typo'd tier ("ollama", "Local") must not silently reroute her brain:
+      // warn once per value, take the foundation path, and keep the note so
+      // status() can report it.
+      preferNote = `brain.prefer "${rawPrefer}" is not one of ${PREFER_TIERS.join('|')} — using foundation`;
+      if (this.#warnedPrefer !== rawPrefer) {
+        this.#warnedPrefer = rawPrefer;
+        log.warn('brain:', preferNote);
+      }
+      prefer = 'foundation';
+    }
     const localUrl = String(cfg?.brain?.local?.url || '').trim();
     const localModel = String(cfg?.brain?.local?.model || '').trim();
     if (prefer === 'fallback') {
@@ -478,13 +496,25 @@ class Brain {
       reason = 'config prefers local';
     } else {
       const f = await this.#tryFoundation();
-      if (f.ok) return { mode: 'foundation', localUrl, localModel };
+      if (f.ok) {
+        return preferNote
+          ? { mode: 'foundation', reason: preferNote, localUrl, localModel }
+          : { mode: 'foundation', localUrl, localModel };
+      }
       reason = f.reason;
     }
-    if (localUrl) return { mode: 'local', reason, localUrl, localModel };
+    if (localUrl) {
+      return {
+        mode: 'local',
+        reason: preferNote ? preferNote + '; ' + reason : reason,
+        localUrl,
+        localModel,
+      };
+    }
+    reason = prefer === 'local' ? 'local url not set' : reason || 'no brain configured';
     return {
       mode: 'fallback',
-      reason: prefer === 'local' ? 'local url not set' : reason || 'no brain configured',
+      reason: preferNote ? preferNote + '; ' + reason : reason,
       localUrl,
       localModel,
     };
@@ -531,9 +561,9 @@ class Brain {
   async status() {
     try {
       const m = await this.#mode();
-      return m.mode === 'foundation' || !m.reason
-        ? { mode: m.mode }
-        : { mode: m.mode, reason: m.reason };
+      // #mode only attaches a reason to foundation when something is worth
+      // surfacing (e.g. an unrecognized brain.prefer) — keep it.
+      return m.reason ? { mode: m.mode, reason: m.reason } : { mode: m.mode };
     } catch (e) {
       return { mode: 'fallback', reason: 'brain error: ' + e.message };
     }

@@ -50,12 +50,20 @@ export function getTopic(slug) {
 
 export function addTopic(name, lenses = ['news', 'hn', 'arxiv']) {
   const topics = listTopics();
+  const trimmed = String(name).trim();
   const slug = slugify(name);
-  if (topics.some((t) => t.slug === slug)) throw new Error(`already tracking "${slug}"`);
+  const existing = topics.find((t) => t.slug === slug);
+  if (existing) {
+    // Answer in the name the user typed; the slug matters only on a collision
+    // between two different display names.
+    throw new Error(existing.name === trimmed
+      ? `already tracking "${existing.name}"`
+      : `already tracking "${trimmed}" — same beat as "${existing.name}" (slug ${slug})`);
+  }
   const t = {
     slug,
-    name: String(name).trim(),
-    query: String(name).trim(),
+    name: trimmed,
+    query: trimmed,
     lenses,
     addedAt: new Date().toISOString(),
     lastSweepAt: null,

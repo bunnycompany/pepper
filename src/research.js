@@ -107,17 +107,26 @@ export async function runCycle({ emit } = {}) {
   const firstEver = store.listBulletins(1).length === 0;
   const freshBy = new Map();
   let itemsSeen = 0;
+  let sourcesTried = 0;
+  let sourceErrors = 0;
 
-  // 2. Sweep each topic sequentially; its lenses in parallel.
+  // 2. Sweep each topic sequentially; its lenses in parallel. A source that
+  // resolves null (fetch failed) is counted separately from one that resolved
+  // [] (the wire is genuinely quiet) so "offline" is distinguishable from
+  // "quiet news day" downstream.
   for (const t of topics) {
     const lenses = (Array.isArray(t.lenses) && t.lenses.length ? t.lenses : ['news', 'hn', 'arxiv'])
       .filter((l) => LENSES[l]);
     const query = t.query || t.name || t.slug;
     const settled = await Promise.allSettled(lenses.map((l) => LENSES[l].fetchTopic(query)));
     const found = [];
+    let errs = 0;
     for (const r of settled) {
       if (r.status === 'fulfilled' && Array.isArray(r.value)) found.push(...r.value);
+      else errs++;
     }
+    sourcesTried += lenses.length;
+    sourceErrors += errs;
     itemsSeen += found.length;
     let fresh = [];
     try {
@@ -129,7 +138,10 @@ export async function runCycle({ emit } = {}) {
       store.touchTopic(t.slug, { lastSweepAt: new Date().toISOString() });
     } catch {}
     freshBy.set(t.slug, fresh);
-    say('sweep', { slug: t.slug, topic: t.name, fresh: fresh.length });
+    say('sweep', {
+      slug: t.slug, topic: t.name, fresh: fresh.length,
+      sourceErrors: errs, sourcesTried: lenses.length,
+    });
   }
 
   // 3. Ticker.
@@ -269,6 +281,14 @@ export async function runCycle({ emit } = {}) {
     }
   }
 
-  // 6. Summary.
-  return { fresh: freshTotal, segments: segments.length, bulletinId, quiet: false };
+  // 6. Summary. sourceErrors === sourcesTried means nothing was reachable
+  // (offline, most likely) — callers can tell that apart from a quiet wire.
+  return {
+    fresh: freshTotal,
+    segments: segments.length,
+    bulletinId,
+    quiet: false,
+    sourceErrors,
+    sourcesTried,
+  };
 }

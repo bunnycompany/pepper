@@ -212,8 +212,34 @@ function boot() {
   } catch (err) {
     console.error('[newsroom] init failed — 3D disabled:', err);
     S.ok = false;
+    showNoSceneCard();
     resolveReady();
   }
+}
+
+// Graceful degrade when WebGL is unavailable: a visible studio card instead
+// of a silent black void. The overlay (chyron, ticker, voice) keeps
+// broadcasting on top — styles live in style.css (#no-scene).
+function showNoSceneCard() {
+  try {
+    if (document.getElementById('no-scene')) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'no-scene';
+    const card = document.createElement('div');
+    card.className = 'ns-card';
+    const mark = document.createElement('div');
+    mark.className = 'ns-mark';
+    mark.textContent = 'MNN';
+    const msg = document.createElement('p');
+    msg.className = 'ns-msg';
+    msg.textContent = 'Her studio needs WebGL — this device can’t draw the 3D set.';
+    const sub = document.createElement('p');
+    sub.className = 'ns-sub';
+    sub.textContent = 'The broadcast continues as captions.';
+    card.append(mark, msg, sub);
+    wrap.append(card);
+    (document.body || document.documentElement).append(wrap);
+  } catch { /* the overlay still runs without the card */ }
 }
 
 function ensureCanvas() {
@@ -936,6 +962,26 @@ async function loadVRMAvatar() {
   vrm.scene.position.z = 0.1;
   S.avatarGroup.updateMatrixWorld(true);
   if (S.vrmB.head) S.headY = S.vrmB.head.getWorldPosition(S.tmpA).y + 0.07;
+
+  // MToon expects exactly ONE directional light at PI intensity; the studio's
+  // spot rig (intensity 150+), hemisphere fill, and accent lights all stack on
+  // the toon ramp and blow her out. Isolate the VRM on render layer 1 with a
+  // single broadcast-neutral key, exempt from the ACES exposure ramp. The
+  // builtin avatar keeps the studio rig — it was tuned under it.
+  vrm.scene.traverse((obj) => {
+    if (obj.isMesh) {
+      obj.layers.set(1);
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      for (const m of mats) if (m) m.toneMapped = false;
+    }
+  });
+  const key = new THREE.DirectionalLight(0xffffff, Math.PI);
+  key.position.set(1.3, S.headY + 0.8, 2.4);
+  key.target.position.set(0, S.headY - 0.3, 0);
+  key.layers.set(1);
+  S.scene.add(key, key.target);
+  S.avatarKey = key;
+  S.camera.layers.enable(1);
 
   try { if (vrm.lookAt) vrm.lookAt.target = S.lookTarget; } catch { /* optional */ }
 }

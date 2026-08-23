@@ -6,13 +6,15 @@ function toIso(s) {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-// fetchTopic(query) → Item[] (without id/topic/seenAt); [] on any failure.
+// fetchTopic(query) → Item[] (without id/topic/seenAt); [] when the search is
+// genuinely empty, null when the fetch itself failed (offline, HTTP error).
 export async function fetchTopic(query) {
   try {
     const url = 'https://hn.algolia.com/api/v1/search_by_date?query='
       + encodeURIComponent(String(query ?? '')) + '&tags=story&hitsPerPage=10';
     const data = await fetchJSON(url);
-    const hits = data && Array.isArray(data.hits) ? data.hits : [];
+    if (data == null) return null;
+    const hits = Array.isArray(data.hits) ? data.hits : [];
     const items = [];
     for (const h of hits) {
       if (!h) continue;
@@ -30,6 +32,6 @@ export async function fetchTopic(query) {
     }
     return items;
   } catch {
-    return [];
+    return null;
   }
 }

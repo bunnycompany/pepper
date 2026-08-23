@@ -42,6 +42,9 @@ const state = {
   voiceURI: '',
   rate: 1.02,
   voiceOn: true,
+  heardHerVoice: false,      // a rendered-voice bulletin has actually played
+  lastPlayedId: null,        // broadcast replay rotation cursor
+  noSignalToasted: false,    // 'no signal' toasts once; the pill carries it after
   broadcast: null,           // exported data blob in broadcast mode
   es: null,
   esBackoff: 1000,
@@ -61,6 +64,16 @@ function shortDate(iso) {
     const d = new Date(iso);
     return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + hhmm(iso);
   } catch { return ''; }
+}
+
+// "recorded" stamps: time alone for today, date + time otherwise — a week-old
+// recording must never masquerade as this morning's.
+function stamp(iso) {
+  try {
+    const d = new Date(iso);
+    if (d.toDateString() === new Date().toDateString()) return hhmm(iso);
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ', ' + hhmm(iso);
+  } catch { return hhmm(iso); }
 }
 
 function fmtMSS(ms) {
@@ -131,8 +144,18 @@ function updateVoicePanel(bulletin) {
   if (hers && els.voiceIdentity) {
     els.voiceIdentity.textContent = (state.voiceIdentity || 'bright-anchor');
   }
+  if (hers) state.heardHerVoice = true;
+  // "Fallback voice" only makes sense once a rendered-voice bulletin has
+  // actually played — before that the picker IS the voice.
   if (els.voiceSelectLabel) {
-    els.voiceSelectLabel.textContent = hers ? 'Fallback voice' : 'Voice';
+    els.voiceSelectLabel.textContent = state.heardHerVoice ? 'Fallback voice' : 'Voice';
+  }
+  // The rate slider only drives browser TTS — while her rendered voice plays
+  // it would be a dead control, so say why instead of looking broken.
+  if (els.voiceRate) {
+    els.voiceRate.disabled = hers;
+    const row = els.voiceRate.closest('.row');
+    if (row) row.title = hers ? 'Her rendered voice has its own pacing' : '';
   }
 }
 
@@ -140,12 +163,51 @@ function updateVoicePanel(bulletin) {
 
 let typeToken = 0;
 
-function setChyron({ kicker, headline, nameplate = false, breaking = false }) {
+function setChyron({ kicker, headline, nameplate = false, breaking = false, sources = null }) {
   els.lowerThird.classList.remove('hidden');
   els.lowerThird.classList.toggle('nameplate', !!nameplate);
   els.kicker.classList.toggle('breaking', !!breaking);
   if (kicker != null) els.kicker.textContent = kicker;
   if (headline != null) els.headline.textContent = headline;
+  renderChyronSources(sources);
+}
+
+// "Sources named" should mean sources reachable: a credit strip under the
+// chyron, linked where the wire kept a URL. Links go quiet while the line is
+// still typing (CSS gates on .line.typing) so a mid-read tap can't misfire.
+function renderChyronSources(sources) {
+  const box = els.chyronSources;
+  if (!box) return;
+  box.textContent = '';
+  const seen = new Set();
+  const list = [];
+  for (const s of (Array.isArray(sources) ? sources : [])) {
+    const name = s && (s.source || s.title);
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    list.push({ name, url: (s && s.url) || null });
+    if (list.length >= 4) break;
+  }
+  if (!list.length) { box.hidden = true; return; }
+  box.hidden = false;
+  const lab = document.createElement('span');
+  lab.className = 'src-label';
+  lab.textContent = 'SOURCES';
+  box.append(lab);
+  for (const s of list) {
+    if (s.url) {
+      const a = document.createElement('a');
+      a.href = s.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = s.name;
+      box.append(a);
+    } else {
+      const sp = document.createElement('span');
+      sp.textContent = s.name;
+      box.append(sp);
+    }
+  }
 }
 
 function clearLine() {
@@ -156,6 +218,7 @@ function clearLine() {
 
 function hideChyron() {
   els.lowerThird.classList.add('hidden');
+  renderChyronSources(null);
   clearLine();
 }
 
@@ -267,12 +330,20 @@ function applyVoiceConfig(v) {
   els.voiceEnabled.checked = state.voiceOn;
   els.voiceRate.value = String(state.rate);
   els.rateVal.textContent = state.rate.toFixed(2) + '×';
+  updateMuteChip();
+}
+
+// Muted must never look broken: a persistent on-stage chip carries the state
+// (including a mute remembered from a previous session) and unmutes on tap.
+function updateMuteChip() {
+  if (els.muteChip) els.muteChip.hidden = !!state.voiceOn;
 }
 
 function setVoiceOn(on) {
   state.voiceOn = !!on;
   try { localStorage.setItem('pepper.voiceOn', on ? '1' : '0'); } catch {}
   els.voiceEnabled.checked = state.voiceOn;
+  updateMuteChip();
   if (!on) {
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch {}
     stopLineAudio();
@@ -335,9 +406,35 @@ async function speakLine(text, token = null) {
    on the exported static broadcast site. Any file that is missing or fails
    to play falls back to the speakLine TTS path for that line only. */
 
-let currentAudio = null; // { el, finish } for the line playing right now
+/* One shared AudioContext, created and resume()d inside the JOIN tap: iOS
+   Safari treats the whole context as user-activated from then on, so every
+   later line plays in her real voice — a fresh Audio() element per line loses
+   the activation after the first await and degrades to TTS. (A single graph
+   also gives mouth-sync somewhere to tap later.) The <audio>-element path
+   below stays as the fallback for browsers without WebAudio. */
+
+let audioCtx = null;
+let currentAudio = null;  // { el, finish } for the <audio> line playing right now
+let currentSource = null; // { src, finish } for the WebAudio line playing right now
+let lineAudioGen = 0;     // bumped by stopLineAudio: a line still decoding when
+                          // the stop landed must never start playing afterwards
+
+function ensureAudioCtx() {
+  if (audioCtx) return audioCtx;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  } catch { audioCtx = null; }
+  return audioCtx;
+}
 
 function stopLineAudio() {
+  lineAudioGen += 1;
+  const s = currentSource;
+  if (s) {
+    currentSource = null;
+    s.finish(true); // deliberate stop — settle the line, no TTS fallback
+  }
   const a = currentAudio;
   if (!a) return;
   currentAudio = null;
@@ -345,7 +442,62 @@ function stopLineAudio() {
   a.finish(true); // deliberate stop — settle the line, no TTS fallback
 }
 
-function playAudioFile(url, text) {
+async function playAudioBuffer(url, text) {
+  // WebAudio path. Resolves true/false like playAudioElement; resolves null
+  // when this path is unavailable and the caller should try the element path.
+  const ctx = audioCtx;
+  if (!ctx || ctx.state === 'closed') return null;
+  try { if (ctx.state === 'suspended') await ctx.resume(); } catch {}
+  if (ctx.state !== 'running') return null;
+  const gen = lineAudioGen;
+  const cap = Math.max(8000, String(text || '').length * 130);
+  let buf = null;
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), cap);
+    let raw = null;
+    try {
+      const res = await fetch(url, { signal: ctl.signal });
+      if (!res.ok) return false;
+      raw = await res.arrayBuffer();
+    } finally {
+      clearTimeout(t);
+    }
+    buf = await new Promise((resolve, reject) => ctx.decodeAudioData(raw, resolve, reject));
+  } catch {
+    return false; // missing/broken file — caller falls back to TTS
+  }
+  // A skip or mute landed while we were fetching/decoding — settle as a
+  // deliberate stop (true) so the caller never falls back to TTS for it.
+  if (gen !== lineAudioGen) return true;
+  return new Promise((resolve) => {
+    let done = false;
+    let guard = null;
+    const src = ctx.createBufferSource();
+    const finish = (ok) => {
+      if (done) return;
+      done = true;
+      clearTimeout(guard);
+      if (currentSource && currentSource.src === src) currentSource = null;
+      try { src.stop(); } catch {}
+      resolve(ok);
+    };
+    currentSource = { src, finish };
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.onended = () => finish(true);
+    guard = setTimeout(() => finish(true), Math.max(8000, buf.duration * 2000));
+    try { src.start(); } catch { finish(false); }
+  });
+}
+
+async function playAudioFile(url, text) {
+  const viaCtx = await playAudioBuffer(url, text);
+  if (viaCtx !== null) return viaCtx;
+  return playAudioElement(url, text);
+}
+
+function playAudioElement(url, text) {
   // Resolves true when playback completed (or was deliberately stopped, or
   // the guard cap expired), false when the file failed to load or play —
   // the caller falls back to TTS only on false.
@@ -441,6 +593,20 @@ function playNow(b, opts = {}) {
   playBulletin(b, { replay: true, ...opts });
 }
 
+// Deliberate skip (the ⏭ next to the bug): supersede the running playback,
+// settle the stage, and let afterPlayback pick up the queue or the idle desk.
+function skipPlayback() {
+  if (!state.playing) return;
+  state.playToken += 1;
+  try { window.speechSynthesis && speechSynthesis.cancel(); } catch {}
+  stopLineAudio();
+  state.playing = false;
+  N.setTalking(false);
+  N.setOnAir(false);
+  hideChyron();
+  afterPlayback();
+}
+
 const SHOTS = ['med', 'close', 'screen', 'close'];
 
 async function playBulletin(b, { replay = false } = {}) {
@@ -449,6 +615,8 @@ async function playBulletin(b, { replay = false } = {}) {
   const my = ++state.playToken;
   clearIdle();
   state.playing = true;
+  if (b.id) state.lastPlayedId = b.id;
+  if (els.skipBtn) els.skipBtn.hidden = false;
   setPill(replay || state.mode === 'broadcast' ? 'replay' : 'live');
   // Rendered-voice bulletins (audio: true) prefer their per-line WAVs; every
   // other bulletin — and every line whose file fails — uses browser TTS.
@@ -462,7 +630,7 @@ async function playBulletin(b, { replay = false } = {}) {
     N.cut('wide');
     N.showOpen({ title: state.site.title });
     setChyron({
-      kicker: replay ? 'REPLAY · recorded ' + hhmm(b.at) : 'MNN LIVE',
+      kicker: replay ? 'REPLAY · recorded ' + stamp(b.at) : 'MNN LIVE',
       headline: state.site.title,
     });
     await say(b.open, 'open');
@@ -489,6 +657,7 @@ async function playBulletin(b, { replay = false } = {}) {
         kicker: breaking ? 'BREAKING · ' + seg.topic : seg.topic,
         headline: seg.headline,
         breaking,
+        sources: seg.sources || [],
       });
       const script = Array.isArray(seg.script) ? seg.script : [];
       for (let j = 0; j < script.length; j++) {
@@ -522,6 +691,8 @@ function afterPlayback() {
   // History replays flip the bug to REPLAY; put the station back on its
   // real footing once playback ends.
   setPill(state.mode === 'broadcast' ? 'replay' : 'live');
+  if (els.skipBtn) els.skipBtn.hidden = true;
+  updateVoicePanel(null); // re-arm the rate slider once her rendered voice stops
   if (state.queue.length && state.unlocked) {
     maybePlay();
     return;
@@ -552,8 +723,12 @@ function clearIdle() {
 function scheduleReplayLoop() {
   const gap = 20000 + Math.random() * 5000;
   const t = setTimeout(() => {
-    const newest = ((state.broadcast || {}).bulletins || [])[0];
-    if (newest && !state.playing && state.unlocked) playBulletin(newest, { replay: true });
+    // Rotate through the whole exported archive, newest first — a lingering
+    // visitor gets a channel, not the newest show on an endless loop.
+    const list = ((state.broadcast || {}).bulletins || []);
+    if (!list.length || state.playing || !state.unlocked) return;
+    const at = list.findIndex((b) => b && b.id === state.lastPlayedId);
+    playBulletin(list[(at + 1) % list.length], { replay: true });
   }, gap);
   state.idleTimers.push(t);
 }
@@ -588,6 +763,9 @@ function applyStatus(d) {
 }
 
 function tickCountdown() {
+  // Pre-boot the pill belongs to detectAndBoot ('tuning in…' / 'no signal —
+  // retrying…') — the countdown must not overwrite it with 'standing by'.
+  if (!state.booted) return;
   if (state.mode === 'broadcast') return;
   if (state.sseDown) {
     els.sweepStatus.classList.remove('shimmer');
@@ -840,11 +1018,13 @@ function connectSSE() {
     }
   });
 
-  on('cycle-end', () => {
+  on('cycle-end', (d) => {
     state.researching = false;
     state.sweepText = '';
     N.sweep(false);
     setGoLiveButton();
+    // A sweep that died must not look identical to a quiet news day.
+    if (d && d.error) toast('Sweep failed: ' + d.error);
   });
 
   on('research-sweep', (d) => {
@@ -881,6 +1061,14 @@ async function goLive() {
     toast('Replay mode — the live desk is closed here.');
     return;
   }
+  if (!state.topics.length) {
+    // A sweep with no beats ends in silence — say so and put the cursor
+    // where the fix is.
+    toast('She needs a beat first — add a topic and she\'ll sweep it.');
+    togglePanel(true);
+    if (els.topicInput) els.topicInput.focus();
+    return;
+  }
   if (state.researching) {
     toast('Already sweeping the wire.');
     return;
@@ -894,7 +1082,8 @@ async function goLive() {
 }
 
 function togglePanel(force) {
-  els.panel.classList.toggle('open', force);
+  const open = els.panel.classList.toggle('open', force);
+  if (els.panelScrim) els.panelScrim.classList.toggle('open', open);
 }
 
 function bubble(kind, text) {
@@ -959,8 +1148,11 @@ async function bootBroadcast(data) {
   setPill('replay');
   const bulletins = Array.isArray(data.bulletins) ? data.bulletins : [];
   const newest = bulletins[0] || null;
-  els.brainMode.textContent = newest ? brainLabel({ mode: newest.brain }) : '📼 archive';
-  els.sweepStatus.textContent = newest ? 'recorded ' + hhmm(newest.at) : 'no bulletins in the archive';
+  // Visitors don't know brain tiers — tell them what they'll actually hear.
+  els.brainMode.textContent = newest
+    ? (newest.audio === true ? '🎙 her own voice' : '🗣 browser voice')
+    : '📼 archive';
+  els.sweepStatus.textContent = newest ? 'recorded ' + stamp(newest.at) : 'no bulletins in the archive';
   const tk = data.ticker;
   renderTicker(Array.isArray(tk) ? tk : ((tk && tk.items) || []));
   renderHistory(bulletins.map(bulletinMeta));
@@ -992,6 +1184,7 @@ async function detectAndBoot() {
   try {
     const st = await fetchJSON('./api/state', { timeoutMs: 2000 });
     await bootStudio(st);
+    signalRestored();
     return;
   } catch {
     /* not a live studio — try the exported broadcast */
@@ -1000,12 +1193,24 @@ async function detectAndBoot() {
     const data = await fetchJSON('./data/broadcast.json', { timeoutMs: 8000 });
     if (!data || !Array.isArray(data.bulletins)) throw new Error('malformed broadcast.json');
     await bootBroadcast(data);
+    signalRestored();
   } catch (e) {
+    // Toast once; from then on the status pill carries the state and the
+    // retry loop runs silently — a blinking toast over a dead stage is noise.
     console.warn('[ui] no signal:', e);
-    els.sweepStatus.textContent = 'no signal';
-    toast('No signal from the studio — retrying shortly.');
+    els.sweepStatus.textContent = 'no signal — retrying…';
+    if (!state.noSignalToasted) {
+      state.noSignalToasted = true;
+      toast('No signal from the studio — retrying in the background.');
+    }
     setTimeout(detectAndBoot, 8000);
   }
+}
+
+function signalRestored() {
+  if (!state.noSignalToasted) return;
+  state.noSignalToasted = false;
+  toast('Signal restored.');
 }
 
 /* ---------- newsroom handshake ---------- */
@@ -1030,7 +1235,9 @@ async function waitForNewsroom() {
 function cacheEls() {
   els.livePill = $('#live-pill');
   els.pillText = $('#live-pill .pill-text');
+  els.skipBtn = $('#skip-btn');
   els.clock = $('#clock');
+  els.muteChip = $('#mute-chip');
   els.brainMode = $('#brain-mode');
   els.sweepStatus = $('#sweep-status');
   els.panelToggle = $('#panel-toggle');
@@ -1040,7 +1247,9 @@ function cacheEls() {
   els.line = $('#lower-third .line');
   els.lineText = $('#lower-third .line-text');
   els.tickerTrack = $('#ticker .ticker-track');
+  els.chyronSources = $('#lower-third .sources');
   els.panel = $('#panel');
+  els.panelScrim = $('#panel-scrim');
   els.panelClose = $('#panel-close');
   els.topicList = $('#topic-list');
   els.topicForm = $('#topic-form');
@@ -1065,6 +1274,13 @@ function cacheEls() {
 function bindUI() {
   els.joinBtn.addEventListener('click', () => {
     state.unlocked = true;
+    // Unlock BOTH audio paths inside this tap: the shared AudioContext for
+    // her rendered voice (iOS honors resume() only in a user gesture) and
+    // speechSynthesis for the TTS fallback.
+    try {
+      const ctx = ensureAudioCtx();
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    } catch {}
     try {
       const u = new SpeechSynthesisUtterance('');
       u.volume = 0;
@@ -1094,6 +1310,16 @@ function bindUI() {
 
   els.panelToggle.addEventListener('click', () => togglePanel());
   els.panelClose.addEventListener('click', () => togglePanel(false));
+  if (els.panelScrim) els.panelScrim.addEventListener('click', () => togglePanel(false));
+
+  if (els.muteChip) {
+    els.muteChip.addEventListener('click', () => {
+      setVoiceOn(true);
+      toast('Sound on');
+    });
+  }
+
+  if (els.skipBtn) els.skipBtn.addEventListener('click', skipPlayback);
 
   els.topicForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1102,10 +1328,19 @@ function bindUI() {
     els.topicInput.value = '';
     try {
       await fetchJSON('./api/topics', { method: 'POST', body: { name } });
-      toast('Tracking “' + name + '” — next sweep will cover it.');
+      toast('Tracking “' + name + '” — press GO LIVE to sweep it now.');
     } catch (err) {
       toast('Could not add beat: ' + err.message);
     }
+  });
+
+  // Belt and braces for implicit submission: Enter in the add-beat box must
+  // always file the topic, on every keyboard (hardware, iOS "go", IME).
+  els.topicInput.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.isComposing) return;
+    e.preventDefault();
+    if (typeof els.topicForm.requestSubmit === 'function') els.topicForm.requestSubmit();
+    else els.topicForm.dispatchEvent(new Event('submit', { cancelable: true }));
   });
 
   els.topicList.addEventListener('click', async (e) => {
@@ -1132,7 +1367,13 @@ function bindUI() {
         b = await fetchJSON('./api/bulletins/' + encodeURIComponent(id));
       }
       if (!b) throw new Error('bulletin not found');
-      playNow(b);
+      if (state.playing) {
+        // Never yank a show off the air for a stray tap — queue it politely.
+        enqueue(b);
+        toast('Queued — plays after this bulletin (⏭ skips ahead).');
+      } else {
+        playNow(b);
+      }
     } catch (err) {
       toast('Replay failed: ' + err.message);
     }
@@ -1164,15 +1405,22 @@ function bindUI() {
     // First-day onboarding: no beats yet → whatever they say is interests.
     if (state.mode === 'studio' && !state.topics.length) {
       const thinking = bubble('pepper thinking', 'Setting up my desk…');
+      // The very first run may compile her on-device brain behind this call
+      // (up to ~3 minutes) — narrate the wait and outlast it rather than
+      // reporting a failure that isn't one.
+      const slowNote = setTimeout(() => {
+        thinking.textContent = 'Her brain is compiling — the first run takes a minute. Hang tight…';
+      }, 15000);
       try {
-        const r = await fetchJSON('./api/onboard', { method: 'POST', body: { interests: q }, timeoutMs: 100000 });
-        thinking.classList.remove('thinking');
+        const r = await fetchJSON('./api/onboard', { method: 'POST', body: { interests: q }, timeoutMs: 200000 });
         thinking.textContent = (r.added && r.added.length)
           ? `On it. My beats: ${r.added.join(' · ')}. First sweep starts now — give me a minute and I'll go on air.`
           : 'I couldn\'t turn that into beats — try naming a few topics, comma-separated.';
       } catch (err) {
-        thinking.classList.remove('thinking');
         thinking.textContent = 'Desk setup hiccuped: ' + err.message;
+      } finally {
+        clearTimeout(slowNote);
+        thinking.classList.remove('thinking');
       }
       return;
     }
@@ -1235,6 +1483,8 @@ function bindUI() {
       toast(state.voiceOn ? 'Sound on' : 'Muted — lines will be timed silently');
     } else if (k === 'p') {
       togglePanel();
+    } else if (k === 'escape') {
+      togglePanel(false);
     }
   });
 

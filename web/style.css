@@ -117,6 +117,24 @@ button, input, select { font-family: inherit; font-size: 13px; }
 
 .pill.replay .dot { background: #8a93a1; animation: none; }
 
+/* unobtrusive skip — only rendered while a bulletin is playing */
+#skip-btn {
+  pointer-events: auto;
+  border: none;
+  background: transparent;
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 5px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+#skip-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+
+#skip-btn[hidden] { display: none; }
+
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.35; transform: scale(0.72); }
@@ -143,7 +161,7 @@ button, input, select { font-family: inherit; font-size: 13px; }
   pointer-events: none;
 }
 
-#status-row #panel-toggle { pointer-events: auto; }
+#status-row #panel-toggle, #status-row #mute-chip { pointer-events: auto; }
 
 #status-pill {
   display: flex;
@@ -182,21 +200,52 @@ button, input, select { font-family: inherit; font-size: 13px; }
 }
 
 #panel-toggle {
-  width: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   height: 36px;
+  padding: 0 12px;
   border-radius: 10px;
   border: 1px solid var(--stroke);
   background: var(--glass);
   backdrop-filter: blur(14px) saturate(1.3);
   -webkit-backdrop-filter: blur(14px) saturate(1.3);
   color: var(--text);
-  font-size: 16px;
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: background 0.15s ease, transform 0.15s ease;
 }
 
+#panel-toggle .pt-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+#panel-toggle .pt-icon { font-size: 15px; line-height: 1; }
+
 #panel-toggle:hover { background: rgba(40, 52, 74, 0.7); transform: translateY(-1px); }
+
+/* the muted state lives on stage, not buried in the drawer — tap to unmute */
+#mute-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(224, 32, 32, 0.55);
+  background: var(--glass);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+#mute-chip:hover { background: rgba(74, 32, 34, 0.7); transform: translateY(-1px); }
+
+#mute-chip[hidden] { display: none; }
 
 /* ---- lower third ---- */
 
@@ -296,6 +345,52 @@ button, input, select { font-family: inherit; font-size: 13px; }
 
 #lower-third.nameplate .line { border-left-color: rgba(53, 214, 255, 0.4); }
 
+/* sources credit strip — the one place a skeptical viewer can tap through */
+
+#lower-third .sources {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 5px;
+  padding: 4px 12px 5px;
+  background: var(--glass);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid var(--stroke);
+  border-radius: 4px;
+  font-size: 11.5px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#lower-third .sources[hidden] { display: none; }
+
+#lower-third .sources .src-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+}
+
+#lower-third .sources a {
+  pointer-events: auto;
+  color: var(--mnn-cyan);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(53, 214, 255, 0.35);
+}
+
+#lower-third .sources a:hover { color: #7de4ff; border-bottom-color: rgba(125, 228, 255, 0.7); }
+
+#lower-third .sources span:not(.src-label) { color: #aab6c8; font-weight: 600; }
+
+/* while the caption is still typing, the strip stays non-interactive */
+#lower-third .line.typing ~ .sources a { pointer-events: none; }
+
+/* a hidden chyron must not leave invisible click targets behind */
+#lower-third.hidden .sources a { pointer-events: none; }
+
 /* ---- ticker ---- */
 
 #ticker {
@@ -373,6 +468,18 @@ button, input, select { font-family: inherit; font-size: 13px; }
 }
 
 /* ---- panel drawer ---- */
+
+#panel-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgba(4, 7, 13, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+#panel-scrim.open { opacity: 1; pointer-events: auto; }
 
 #panel {
   position: fixed;
@@ -517,13 +624,20 @@ body.mode-broadcast .studio-only { display: none; }
 
 .t-del {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   background: transparent;
   color: var(--dim);
   font-size: 13px;
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 5px;
+  /* 44px touch target without inflating the row — negative margins hand the
+     padding back to the layout */
+  min-width: 44px;
+  min-height: 44px;
+  margin: -11px -10px -11px -8px;
+  border-radius: 8px;
 }
 
 .t-del:hover { color: #fff; background: rgba(224, 32, 32, 0.35); }
@@ -704,6 +818,19 @@ body.mode-broadcast .studio-only { display: none; }
   text-align: center;
 }
 
+/* broadcast-mode extras stay out of the studio entirely */
+
+.broadcast-only { display: none; }
+
+.panel-foot .foot-link {
+  color: var(--mnn-cyan);
+  text-decoration: none;
+}
+
+body.mode-broadcast .panel-foot .foot-link { display: block; margin-top: 6px; }
+
+.panel-foot .foot-link:hover { color: #7de4ff; }
+
 /* ---- join gate ---- */
 
 #join-gate {
@@ -755,6 +882,14 @@ body.mode-broadcast .studio-only { display: none; }
   color: var(--dim);
 }
 
+.gate-about {
+  margin: -4px 0 0;
+  max-width: 380px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #aab6c8;
+}
+
 #join-btn {
   margin-top: 8px;
   padding: 15px 38px;
@@ -776,6 +911,18 @@ body.mode-broadcast .studio-only { display: none; }
 }
 
 .gate-hint { font-size: 12px; color: #5d6a7d; letter-spacing: 0.06em; }
+
+.gate-run-own {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--mnn-cyan);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(53, 214, 255, 0.35);
+}
+
+body.mode-broadcast .gate-run-own { display: inline-block; }
+
+.gate-run-own:hover { color: #7de4ff; border-bottom-color: rgba(125, 228, 255, 0.7); }
 
 /* ---- toast ---- */
 
@@ -820,6 +967,10 @@ body.mode-broadcast .studio-only { display: none; }
   #clock { font-size: 13px; }
   #lower-third { left: 12px; bottom: 56px; width: calc(100vw - 24px); }
   .ticker-label { font-size: 12.5px; padding: 0 18px 0 12px; }
+
+  /* ≥16px keeps iOS Safari from auto-zooming the fixed-overlay layout
+     when an input is focused */
+  #topic-input, #ask-input, #voice-select { font-size: 16px; }
 }
 
 @media (max-width: 520px) {
@@ -831,3 +982,48 @@ body.mode-broadcast .studio-only { display: none; }
   .ticker-track { animation-duration: 240s !important; }
   .pill.live .dot, .kicker.breaking, #sweep-status.shimmer { animation: none; }
 }
+
+/* ---- no-WebGL studio card (injected by newsroom.js when 3D init fails) ---- */
+
+#no-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(ellipse at 50% 40%, #10182a, #05070c 78%);
+}
+
+.ns-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 420px;
+  padding: 28px 30px;
+  text-align: center;
+  background: var(--glass-2);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.ns-mark {
+  background: linear-gradient(180deg, var(--mnn-red-hot), var(--mnn-red) 55%, #a51212);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.04em;
+  padding: 6px 14px 8px;
+  border-radius: 8px;
+  box-shadow: var(--red-glow);
+}
+
+.ns-msg { margin: 4px 0 0; font-size: 14.5px; font-weight: 600; line-height: 1.45; }
+
+.ns-sub { margin: 0; font-size: 12.5px; color: var(--dim); }

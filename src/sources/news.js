@@ -22,13 +22,14 @@ function splitTitle(rawTitle, tagSource) {
   return { title, source: '' };
 }
 
-// fetchTopic(query) → Item[] (without id/topic/seenAt); [] on any failure.
+// fetchTopic(query) → Item[] (without id/topic/seenAt); [] when the feed is
+// genuinely empty, null when the fetch itself failed (offline, HTTP error).
 export async function fetchTopic(query) {
   try {
     const url = 'https://news.google.com/rss/search?q='
       + encodeURIComponent(String(query ?? '')) + '&hl=en-US&gl=US&ceid=US:en';
     const xml = await fetchText(url);
-    if (!xml) return [];
+    if (!xml) return null;
     const items = [];
     for (const e of parseFeed(xml)) {
       const { title, source } = splitTitle(e.title, e.source);
@@ -47,6 +48,6 @@ export async function fetchTopic(query) {
     }
     return items;
   } catch {
-    return [];
+    return null;
   }
 }
