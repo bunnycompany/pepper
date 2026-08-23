@@ -29,7 +29,8 @@
   .lede { color: var(--body); max-width: 560px; }
   section { padding: 40px 0; }
 
-  nav { display: flex; align-items: center; gap: 26px; padding: 20px 0; font-size: 14px; font-weight: 600; }
+  nav { display: flex; align-items: center; gap: 26px; row-gap: 8px; flex-wrap: wrap; padding: 20px 0; font-size: 14px; font-weight: 600; }
+  @media (max-width: 560px) { nav { gap: 14px; } }
   .logo { background: var(--red); color: #fff; font-weight: 900; font-size: 17px; letter-spacing: .06em; padding: 5px 12px; border-radius: 5px; font-style: italic; text-decoration: none; }
   nav a:not(.logo) { color: var(--dim); text-decoration: none; }
   nav a:not(.logo):hover { color: var(--ink); }
@@ -81,6 +82,8 @@
   .deploy .path p { color: var(--dim); font-size: 14px; }
   .deploy .path code { color: var(--body); font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
   .deploy-btn { display: inline-block; margin-top: 6px; }
+  .table-scroll { overflow-x: auto; }
+  @media (max-width: 560px) { .deploy .path { flex-direction: column; gap: 4px; } .deploy .path b { min-width: 0; } }
 
   footer { border-top: 1px solid var(--line); padding: 30px 0 52px; color: var(--dim); font-size: 13px; line-height: 1.7; }
   footer a { color: var(--body); text-decoration: none; }
@@ -136,7 +139,7 @@
         <h2>Best in her weight class — and honest about the ceiling above it.</h2>
         <p class="lede">MoltBench scores wire-to-report work: grounding, attribution, and adjudication of deliberately contaminated bundles, under blind judges. Pepper's first model <em>failed</em> it — that failure became the release gate. Her current desk model cleared it: +23 grounding points over its own untuned base, 10/12 blind wins against Qwen3-4B-2507, 11/12 against Qwen2.5-7B. Models 6× and 13× her size still out-broadcast her — 10/12 and 11/12 — and those rows are published too, because a leaderboard that hides its ceiling isn't one. The judge column is the claim; regex grounding is only the screening metric (it rewards terseness — a lesson this benchmark learned in public). <a href="https://github.com/bunnycompany/pepper/tree/main/bench">Protocol and bundles →</a></p>
       </div>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Model</th><th>Blind judges vs pepper-desk</th><th>Regex grounding (screening)</th></tr></thead>
         <tbody>
           <tr class="hers"><td>pepper-desk-e2b (2B active)</td><td>—</td><td>88.6%</td></tr>
@@ -146,7 +149,7 @@
           <tr><td>Qwen3.8-27B (13× the size)</td><td>she loses 1 / 12</td><td>80.9%</td></tr>
           <tr><td>gemma-4-e2b (her untuned base)</td><td>—</td><td>65.2%</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
   </section>
 

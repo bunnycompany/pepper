@@ -813,10 +813,18 @@ body.mode-broadcast .studio-only { display: none; }
 
 @media (max-width: 640px) {
   #status-pill { font-size: 11px; padding: 6px 10px; }
+  /* the fixed top-left bug and top-right pill collide on phones —
+     shed the clock and sweep text (both live in the panel) so they fit */
+
   .bug-logo { font-size: 17px; padding: 5px 10px; }
   #clock { font-size: 13px; }
   #lower-third { left: 12px; bottom: 56px; width: calc(100vw - 24px); }
   .ticker-label { font-size: 12.5px; padding: 0 18px 0 12px; }
+}
+
+@media (max-width: 520px) {
+  #clock { display: none; }
+  #status-pill .sep, #sweep-status { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
