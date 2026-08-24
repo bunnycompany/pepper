@@ -133,6 +133,28 @@ Metric note: v0.1 strips leading articles and sentence-boundary artifacts
 that v0 counted as ungrounded entities; all three models are scored under the
 same instrument, and both metric versions live in git history.
 
+## External: DeepResearch Bench (EN-50, local judge)
+
+Run 2026-08-23 against [DeepResearch Bench](https://github.com/Ayanami0730/deep_research_bench)
+(100 PhD-level research tasks; we ran the 50 English tasks). Agent under
+test: `pepper research --long` end-to-end — pepper-desk-e2b brain, keyless
+news/HN/arXiv sources, on-device throughout. Judge: gemma-4-26B-A4B (local,
+mlx_lm); judge-scale validated by rescoring the repo's bundled
+Claude-3.7-Sonnet reports — 0.4198 local vs 0.4218 official (Δ0.002), so the
+scale transfers.
+
+| Agent | Compreh. | Insight | Instr-Follow | Readability | Overall |
+|---|---|---|---|---|---|
+| Claude-3.7-Sonnet deep research (frontier, full web) | 0.414 | 0.392 | 0.461 | 0.424 | **0.420** |
+| pepper research --long (2B desk model, news wire) | 0.270 | 0.241 | 0.324 | 0.311 | **0.280** |
+
+Read honestly: a 2B-active model restricted to public news-wire sources
+delivers ~two-thirds of a frontier cloud agent's judged report quality on
+tasks far outside its specialization. Her profile matches her training —
+relatively strongest on instruction-following and readability, weakest on
+insight. Caveats: local judge (family-adjacent to the desk model, mitigated
+by the scale validation above), EN-50 only, single run.
+
 ## Run it
 
 ```sh
