@@ -136,7 +136,9 @@ mlx_lm.server --model <pepper-model-dir> --port 8080
 ```
 
 then point her `brain.local.url` at `http://localhost:8080` and the desk runs
-on her own distilled voice. A smaller singularity-desk specialist build is in
+on her own distilled voice. **Recommended:** serve `pepper-desk-e2b` this way —
+blind judges preferred it over the built-in Apple Foundation Models brain 9/12
+on desk work (`bench/judgments/r5`), with far stronger broadcast register. A smaller singularity-desk specialist build is in
 progress. The first release is live:
 [pepper-research/pepper-desk-e2b](https://huggingface.co/pepper-research/pepper-desk-e2b)
 — an on-device 2B that out-broadcast the current Qwen3-4B (10/12 blind

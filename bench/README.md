@@ -61,6 +61,7 @@ the desk track: a model that charms while confabulating fails MoltBench.
 | Qwen3.8-27B-uncensored (via LM Studio) | 27B | 70.5% | deterministic only |
 | prism-ml/bonsai-27b (via LM Studio) | 27B | 79.6% | deterministic only |
 | Qwen2.5-7B-Instruct | 7B | 77.5% | 1/12 (desk 11/12, p≈0.006) |
+| Apple Foundation Models (on-device, ~3B) | ~3B | 48.0% | **3/12** (desk 9/12, p≈0.15 — a lean, not a verdict) |
 | Llama-3.2-3B-Instruct | 3B | 68.4% | — |
 | gemma-4-e2b-it (her untuned base) | 2B (4.6B total) | 65.2% | — |
 | pepper-7b (persona LoRA) | 7B | 50.0% | 0/12 |
@@ -92,6 +93,12 @@ Readings, honestly stated:
   is demoted to a screening filter — never a headline number — and every
   leaderboard claim is a blind pairwise result with its verdicts in
   `bench/judgments/`.
+- **Apple FM row:** the desk beats the model that writes her live bulletins
+  9/12 blind — tied on grounding, decisive on register and persona (Apple FM
+  emits memo-format and empty ON AIR blocks under the desk prompt). At n=12
+  this is a recommendation-grade lean, not a significance claim; it motivates
+  the documented upgrade path (serve pepper-desk locally, point brain.local at
+  it) without changing the zero-setup default.
 - **Remaining 27B rows are deterministic-only and should be read with the caveat above:**
   every 27B scores below the 2B on the regex metric, which we now know rewards
   terseness; without a blind round they carry no pairwise claim. They needed an
