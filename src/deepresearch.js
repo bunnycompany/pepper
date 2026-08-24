@@ -54,7 +54,78 @@ function templateReport(question, ranked) {
     + ` The desk reports only what the wire supports — the fuller read needs an on-device brain, and this machine is running without one tonight.`;
 }
 
-export async function runDeepResearch(question, { emit = () => {} } = {}) {
+// Sectioned long-form report: one brain call per angle (each fits a 4K-token
+// on-device context) plus a synthesis pass. Items carry stable [n] numbers so
+// citations survive across sections and resolve to real URLs in the list.
+// Small on-device models sometimes hallucinate tool-call syntax or echo their
+// notes; scrub that before any text reaches a report.
+function scrubProse(text) {
+  if (!text) return null;
+  const lines = String(text).split('\n').filter((l) => {
+    const t = l.trim();
+    if (/^tool_call\b/i.test(t)) return false;
+    if (/^\{\s*"tool_name"/.test(t)) return false;
+    if (/^[a-z_]+\s*=\s*\[\{/.test(t)) return false;
+    if (/^The response_format and tool calls/i.test(t)) return false;
+    if (/^- \[\d+\]/.test(t) || /^\[\d+\] \[(news|hn|arxiv)\]/i.test(t)) return false;
+    return true;
+  });
+  const out = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return out.length >= 60 ? out : null;
+}
+
+async function generateLongReport(q, angles, byAngle, items, brain, emit) {
+  const num = new Map(items.map((it, i) => [it, i + 1]));
+  const numberedLine = (it) => `[${num.get(it)}] ${lineFor(it).slice(2, 260)}`;
+  const sections = [];
+  for (const angle of angles) {
+    const mine = (byAngle.get(angle) || []).slice(0, 10);
+    if (!mine.length) continue;
+    emit('research-writing', { section: angle });
+    const body = await brain.generate({
+      instructions: 'You write one section of a research desk report. Broadcast-clear flowing prose — never repeat or list the notes verbatim, never output tool calls or JSON. '
+        + 'present tense, 150 to 250 words. Every factual claim cites its source by the '
+        + 'bracketed number shown in the notes, like [3]. Never invent facts or numbers '
+        + 'absent from the notes; where the notes cannot answer, say so plainly.',
+      prompt: `Report question: ${q}
+Section focus: ${angle}
+
+Numbered wire notes:
+`
+        + mine.map(numberedLine).join('\n'),
+      max: 420,
+    });
+    const clean = scrubProse(body);
+    if (clean) sections.push({ angle, body: clean });
+  }
+  if (!sections.length) return null;
+  const overviewNotes = sections.map((s) => `- ${s.angle}: ${s.body.slice(0, 160)}`).join('\n');
+  const intro = await brain.generate({
+    instructions: 'You write the opening of a research desk report: 80 to 140 words. State what '
+      + 'the question is, what the desk could and could not establish from its sources, and the '
+      + 'single strongest finding. Plain prose, no headers, no invented facts.',
+    prompt: `Question: ${q}\n\nSection summaries:\n${overviewNotes}`,
+    max: 260,
+  });
+  const outro = await brain.generate({
+    instructions: 'You close a research desk report in 60 to 110 words: what remains unknown, '
+      + 'what evidence would settle it, and what the desk is watching. Plain prose.',
+    prompt: `Question: ${q}\n\nSection summaries:\n${overviewNotes}`,
+    max: 220,
+  });
+  const parts = [`# ${q}`];
+  const introClean = scrubProse(intro);
+  if (introClean) parts.push(introClean);
+  for (const s of sections) parts.push(`## ${s.angle}\n\n${s.body}`);
+  const outroClean = scrubProse(outro);
+  if (outroClean) parts.push(`## What the desk is watching\n\n${outroClean}`);
+  parts.push('## Sources\n\n' + items.filter((it) => num.has(it))
+    .map((it) => `[${num.get(it)}] ${it.title} — ${it.source}${it.url ? ` — ${it.url}` : ''}`)
+    .join('\n'));
+  return parts.join('\n\n');
+}
+
+export async function runDeepResearch(question, { emit = () => {}, long = false } = {}) {
   const q = String(question || '').trim();
   if (!q) throw new Error('research question required');
   const { getBrain } = await import('./brain/index.js');
@@ -80,30 +151,50 @@ export async function runDeepResearch(question, { emit = () => {} } = {}) {
   }
   if (q.length <= 70) angles.unshift(q);
   if (!angles.length) angles = [q.slice(0, 70)];
+  if (long && angles.length < 4) {
+    // Decomposition came back thin (small models sometimes emit junk there);
+    // guarantee search diversity with deterministic facets of the question.
+    const stem = q.replace(/[?.!]+$/, '').split(/\s+/).slice(0, 6).join(' ');
+    for (const facet of ['latest developments', 'statistics data', 'analysis criticism', 'market outlook']) {
+      const a = `${stem} ${facet}`.slice(0, 78);
+      if (!angles.some((x) => x.toLowerCase() === a.toLowerCase())) angles.push(a);
+      if (angles.length >= 5) break;
+    }
+  }
   emit('research-angles', { angles });
 
   // 2. sweep every angle across all lenses
   const seen = new Set();
   const items = [];
+  const byAngle = new Map();
   let angleIdx = 0;
-  for (const angle of angles.slice(0, 5)) {
+  for (const angle of angles.slice(0, long ? 6 : 5)) {
     emit('research-sweep', { query: angle });
     // arXiv rate-limits bursts hard — only the first two angles query it.
     const fetchers = [news.fetchTopic(angle), hn.fetchTopic(angle)];
     if (angleIdx++ < 2) fetchers.push(arxiv.fetchTopic(angle));
     const results = await Promise.allSettled(fetchers);
+    const mine = [];
     for (const r of results) {
       if (r.status !== 'fulfilled') continue;
       for (const it of r.value || []) {
         if (!it || !it.title) continue;
         const key = String(it.url || it.title).toLowerCase();
-        if (seen.has(key)) continue;
+        if (seen.has(key)) { const kept = items.find((x) => String(x.url || x.title).toLowerCase() === key); if (kept) mine.push(kept); continue; }
         seen.add(key);
         items.push(it);
+        mine.push(it);
       }
     }
+    byAngle.set(angle, mine);
   }
   emit('research-swept', { items: items.length });
+
+  // Long mode: a sectioned special report with numbered, verifiable citations.
+  let longArticle = null;
+  if (long && items.length) {
+    longArticle = await generateLongReport(q, angles, byAngle, items, brain, emit);
+  }
 
   // 3 + 4. digest → report
   const { digest, ranked } = buildDigest(items);
@@ -153,7 +244,7 @@ export async function runDeepResearch(question, { emit = () => {} } = {}) {
   }
   emit('research-done', { id: bulletin.id, items: items.length });
   return {
-    question: q, angles, items: items.length, mode,
+    question: q, angles, items: items.length, mode, article: longArticle,
     notes: noteMatch ? noteMatch[1].trim() : null,
     report: onAir,
     bulletinId: bulletin.id,

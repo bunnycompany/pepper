@@ -508,6 +508,7 @@ async function cmdResearch() {
   console.log('  🌶 ' + c.bold('deep dive') + c.dim(' — ' + q));
   const t0 = Date.now();
   const r = await runDeepResearch(q, {
+    long: !!flags.long,
     emit: (type, d) => {
       if (type === 'research-angles') console.log(c.dim('  angles: ' + d.angles.join(' · ')));
       if (type === 'research-sweep') console.log(c.dim('  sweeping: ' + d.query));
@@ -517,6 +518,10 @@ async function cmdResearch() {
   console.log('');
   if (flags.json) {
     console.log(JSON.stringify(r, null, 2));
+  } else if (flags.long && r.article) {
+    console.log(r.article);
+    console.log('');
+    console.log(c.dim(`  ${r.items} sources · filed as ${r.bulletinId}`));
   } else {
     if (r.notes) console.log(c.dim('  DESK NOTES: ' + r.notes) + '\n');
     for (const line of wrapText(r.report, 78)) console.log('  ' + line);

@@ -535,6 +535,9 @@ class Brain {
           ],
           temperature: 0.7,
           max_tokens: Math.min(2000, Math.max(64, Number(maxTokens) || 450)),
+          // Thinking-model endpoints (gemma/qwen templates) burn the budget on
+          // hidden reasoning; unknown fields are ignored by other servers.
+          chat_template_kwargs: { enable_thinking: false },
           stream: false,
         }),
         signal: AbortSignal.timeout(GEN_TIMEOUT_MS),
