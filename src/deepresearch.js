@@ -338,6 +338,7 @@ async function generateLongReport(q, angles, byAngle, items, brain, emit) {
       instructions: SECTION_INSTRUCTIONS,
       prompt: `Report question: ${q}\nSection focus: ${angle}\n\n${notes.notes}`,
       max: 560,
+      role: 'writer',
     });
     const clean = scrubProse(body);
     if (!clean) continue;
@@ -385,6 +386,7 @@ async function generateLongReport(q, angles, byAngle, items, brain, emit) {
       + 'headers, no lists.',
     prompt: `Question: ${q}\n\nSection summaries:\n${recap}`,
     max: 260,
+    role: 'synthesizer',
   });
 
   const parts = [`# ${q}`];
@@ -432,6 +434,7 @@ export async function runDeepResearch(question, { emit = () => {}, long = false 
     instructions: 'You decompose research questions into web search queries. Reply with one query per line, two to five words each. No numbering, no commentary.',
     prompt: `Research question: ${q}\nWrite ${wantAngles} distinct search queries covering different angles of it.`,
     max: long ? 200 : 120,
+    role: 'planner',
   });
   if (anglesText) {
     // Small on-device models sometimes emit tool-call syntax or snake_case

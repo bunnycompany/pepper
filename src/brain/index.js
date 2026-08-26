@@ -629,11 +629,31 @@ class Brain {
     }
   }
 
-  async generate({ instructions, prompt, max } = {}) {
+  // Roles let one report be written by several models: a bigger model can
+  // plan and synthesize while the fine-tuned desk model writes sections in
+  // its own voice. config.brain.roles.<role> = { url, model }; anything
+  // unset falls through to the ordinary tier, so single-model setups and
+  // every existing config behave exactly as before.
+  #roleTier(role) {
+    if (!role) return null;
+    let cfg = null;
+    try { cfg = loadConfig(); } catch { return null; }
+    const r = cfg?.brain?.roles?.[role];
+    const url = String(r?.url || '').trim();
+    if (!url) return null;
+    return {
+      mode: 'local',
+      localUrl: url,
+      localModel: String(r?.model || '').trim(),
+      role,
+    };
+  }
+
+  async generate({ instructions, prompt, max, role } = {}) {
     try {
       const p = String(prompt || '').trim();
       if (!p) return null;
-      const m = await this.#mode();
+      const m = this.#roleTier(role) || await this.#mode();
       const inst = String(instructions || '').trim() || PERSONA;
       const cap = Number(max) || 450;
       let text = null;
