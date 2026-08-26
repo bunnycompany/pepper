@@ -143,10 +143,19 @@ mlx_lm); judge-scale validated by rescoring the repo's bundled
 Claude-3.7-Sonnet reports — 0.4198 local vs 0.4218 official (Δ0.002), so the
 scale transfers.
 
-| Agent | Compreh. | Insight | Instr-Follow | Readability | Overall |
+| Agent (brain) | Compreh. | Insight | Instr-Follow | Readability | Overall |
 |---|---|---|---|---|---|
 | Claude-3.7-Sonnet deep research (frontier, full web) | 0.414 | 0.392 | 0.461 | 0.424 | **0.420** |
-| pepper research --long (2B desk model, news wire) | 0.270 | 0.241 | 0.324 | 0.311 | **0.280** |
+| `pepper research --long` — **pepper-desk-e2b (2B)** | 0.270 | 0.241 | 0.324 | 0.311 | **0.280** |
+| `pepper research --long` — Apple Foundation Models (~3B, stock) | 0.201 | 0.143 | 0.246 | 0.172 | **0.190** |
+
+**The controlled comparison.** The last two rows are the same agent, same
+sources, same prompts, same judge — only the brain differs. Her fine-tuned 2B
+scores **48% higher overall** than Apple's stock on-device model, and the gap
+is widest exactly where the desk training aimed: insight (+68%) and
+readability (+81%). That is the clearest evidence in this repo that the
+specialization does real work: a 2B trained on 452 verified wire→report pairs
+out-researches a larger general-purpose on-device model at its own job.
 
 **FACT (citation trustworthiness), same run:** citation validity **81.8%**
 (share of cited statements actually supported by the page at the cited URL;
