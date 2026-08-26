@@ -148,6 +148,13 @@ scale transfers.
 | Claude-3.7-Sonnet deep research (frontier, full web) | 0.414 | 0.392 | 0.461 | 0.424 | **0.420** |
 | pepper research --long (2B desk model, news wire) | 0.270 | 0.241 | 0.324 | 0.311 | **0.280** |
 
+**FACT (citation trustworthiness), same run:** citation validity **81.8%**
+(share of cited statements actually supported by the page at the cited URL;
+0.92 citations per extracted statement). Her citations are mechanically bound
+to fetched wire items — the pipeline cannot emit a URL it never retrieved —
+so the failure mode is support-mismatch, never invented links. Scraping was
+done directly (no Jina), judge as above.
+
 Read honestly: a 2B-active model restricted to public news-wire sources
 delivers ~two-thirds of a frontier cloud agent's judged report quality on
 tasks far outside its specialization. Her profile matches her training —
