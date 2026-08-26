@@ -35,3 +35,24 @@ Every published score names: which split, which judge, which agent version,
 and the date. Scores from different splits are never mixed into one number.
 Prior runs (2026-08-23/24) predate this protocol and used all 50 EN tasks;
 they are labeled `en50-preprotocol` in the results table.
+
+## Judges (added 2026-08-26)
+
+A single judge from the same model family as any component under test is a
+conflict of interest. Scores are therefore produced by a **two-family panel**,
+and **the lower of the two is the number we publish**:
+
+| Judge | Model | Serves |
+|---|---|---|
+| A | `gemma-4-26B-A4B-it-QAT-MLX-4bit` | angel:8082 |
+| B | `Qwen3.6-35B-A3B` | angel:8083 |
+
+Constraint that follows: no model in Pepper's routed cast may share a family
+with a judge on the panel for a score to count. Her desk model is a
+gemma-4-e2b derivative, so **judge B (Qwen) is the authoritative judge for any
+run where a gemma-family model writes or synthesizes**; judge A's score is
+reported alongside as the family-adjacent reading.
+
+Judge-scale validation (rescoring the bundled Claude-3.7-Sonnet reports)
+is repeated per judge, so a judge that runs hot or cold is visible rather
+than baked into a claim.
