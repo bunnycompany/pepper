@@ -155,9 +155,21 @@ function clip(text, max) {
 // Which pages are worth spending fetches on: best sources first, capped per
 // host so one publisher (or one Google News redirect farm) cannot eat the
 // budget, and capped per lens so the report reads more than one kind of source.
+// Some URLs cannot yield article text no matter how politely we ask: Google
+// News RSS links are encoded redirect wrappers that land on a JS interstitial,
+// and a spent read slot is a section paragraph that never got real material.
+// The headline still cites fine — only the reading budget skips them.
+const UNREADABLE_HOSTS = /(^|\.)(news\.google\.com|consent\.google\.com|news\.yahoo\.com)$/i;
+
+function readable(url) {
+  const h = hostOf(url);
+  return !!h && !UNREADABLE_HOSTS.test(h);
+}
+
 function pickForReading(items) {
   const ranked = items
     .filter((it) => it && typeof it.url === 'string' && /^https?:\/\//i.test(it.url))
+    .filter((it) => readable(it.url))
     .sort((a, b) => readWeight(b) - readWeight(a));
   const perHost = new Map();
   const perLens = new Map();
