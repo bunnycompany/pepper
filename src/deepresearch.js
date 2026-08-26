@@ -395,11 +395,21 @@ async function generateLongReport(q, angles, byAngle, items, brain, emit) {
   const outroClean = scrubProse(outro);
   if (outroClean) parts.push(`## What the desk is watching\n\n${outroClean}`);
 
-  // Every number the report can legitimately carry has to resolve to a real
-  // URL: list what was offered to a section, plus anything the prose cites.
-  const prose = parts.join('\n\n');
-  for (const m of prose.matchAll(/\[(\d{1,4})\]/g)) offered.add(Number(m[1]));
-  const listed = items.filter((it) => offered.has(num.get(it)));
+  // A citation may only name a source the writer was actually shown. Widening
+  // this set from the prose would let an in-range hallucinated [n] promote a
+  // real-but-unrelated source next to a claim it does not support — a
+  // support-mismatch, which is the failure mode FACT actually measures.
+  // Unoffered markers are stripped from the prose instead of legitimized.
+  const cited = new Set();
+  for (let i = 0; i < parts.length; i++) {
+    parts[i] = parts[i].replace(/\[(\d{1,4})\]/g, (mark, n) => {
+      const k = Number(n);
+      if (!offered.has(k)) return '';
+      cited.add(k);
+      return mark;
+    }).replace(/[ \t]{2,}/g, ' ').replace(/ +([.,;:])/g, '$1');
+  }
+  const listed = items.filter((it) => cited.has(num.get(it)));
   parts.push('## Sources\n\n' + listed
     .map((it) => `[${num.get(it)}] ${it.title} — ${it.source}${it.url ? ` — ${it.url}` : ''}`)
     .join('\n'));
