@@ -12,7 +12,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadConfig, paths } from '../config.js';
 import { log } from '../log.js';
 import * as store from '../store.js';
@@ -520,6 +520,30 @@ class Brain {
     };
   }
 
+  // Role-tier calls are teacher traces: when config.brain.traces is on, each
+  // successful call is appended to ~/.pepper/traces/roles.jsonl. The tag
+  // (PEPPER_TRACE_TAG) travels with every record so runs against benchmark
+  // tasks can be excluded from any training set later. Never throws.
+  #traceRole(m, instructions, prompt, text) {
+    try {
+      const cfg = loadConfig();
+      if (!cfg?.brain?.traces) return;
+      const dir = `${paths.home}/traces`;
+      mkdirSync(dir, { recursive: true });
+      appendFileSync(`${dir}/roles.jsonl`, JSON.stringify({
+        ts: new Date().toISOString(),
+        role: m.role,
+        model: m.localModel || 'default',
+        tag: process.env.PEPPER_TRACE_TAG || 'live',
+        instructions,
+        prompt,
+        text,
+      }) + '\n');
+    } catch (e) {
+      log.warn('brain.trace failed:', e.message);
+    }
+  }
+
   async #localChat(m, instructions, prompt, maxTokens) {
     const url = localChatUrl(m.localUrl);
     if (!url) return null;
@@ -554,7 +578,9 @@ class Brain {
       if (!res.ok) return null;
       const data = await res.json();
       const text = data?.choices?.[0]?.message?.content;
-      return typeof text === 'string' && text.trim() ? text : null;
+      const out = typeof text === 'string' && text.trim() ? text : null;
+      if (out && m.role) this.#traceRole(m, instructions, prompt, out);
+      return out;
     } catch {
       return null;
     }
