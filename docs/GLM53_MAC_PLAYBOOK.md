@@ -167,3 +167,26 @@ Alert below ~4 tok/s (healthy baseline ~6; https://huggingface.co/Vontra/GLM-5.3
 ---
 
 **Conflict summary:** (a) wired-limit raise (A) vs cap (C) → C wins for your thrash-panicked box; raise only if the 6-bit quant moves in. (b) MTP 26.4 tok/s claim (drowzeys) vs MTP-is-slower (Vontra + issue #2033) → trust Vontra; unverified pack contradicting first-party measurements. (c) Buffer-cache env var (community lore) vs no-such-var (A's dylib strings audit) → trust the audit; use the wrapper. (d) kv-quant as a win (A, generic) vs irrelevant here → your ~3.5K-token requests never reach the 5000-token quantization start; skip it.
+
+
+## Addendum (2026-08-27, after the oMLX investigation)
+
+**oMLX: SKIP until its mlx-vlm pin moves.** The runtime behind Vontra's
+6.2 tok/s is a private backport — mainline oMLX pins mlx-vlm 0.6.3
+(pre-glm5_next) and cannot load any GLM-5.3 checkpoint; the glm5_next decode
+optimizations are already in the 0.6.17 we run. The claimed 2x may be
+benchmark conditions (fresh cache, short prompt, 512-token output) — decisive
+test: rerun our measurement under those exact conditions in the next server
+gap. If oMLX bumps its pin, it becomes attractive: OpenAI API, per-model
+forced template kwargs, --memory-guard-gb. (github.com/jundot/omlx)
+
+**Numerics: our vanilla 0.6.17 glm5_next has verified defects.** From
+github.com/PipeNetwork/glm53-flash-mlx (with a transformers-parity test
+suite): swiglu_limit declared but never applied in all 45 FFN blocks
+(control: unclamped moves logits by 5.9e-1), two epsilon mismatches (MLA
+low-rank norm, indexer LayerNorm), bf16 router logits vs fp32 reference.
+Our checkpoint's fp32 mHC arrays dodge the convert-cast defect. Plan:
+overlay their fixed glm5_next package in the gap after the v3 dev run
+completes (mid-run swaps would make the run internally inconsistent),
+re-measure speed, and give the holdout run correct numerics. Documented so
+the dev-vs-holdout runtime difference is on the record.
