@@ -537,8 +537,11 @@ class Brain {
           // Role tiers may point at always-thinking models (GLM-5.x) whose
           // hidden reasoning spends completion tokens before the answer
           // starts; without headroom the visible content comes back empty.
+          // Headroom is deliberately modest: at single-digit tok/s a huge cap
+          // means a client timeout abandons a generation the server keeps
+          // computing, and abandoned generations pile up until the box dies.
           max_tokens: m.role
-            ? Math.min(3600, Math.max(64, Number(maxTokens) || 450) + 1600)
+            ? Math.min(1200, Math.max(64, Number(maxTokens) || 450) + 700)
             : Math.min(2000, Math.max(64, Number(maxTokens) || 450)),
           // Reasoning models (Qwen3, GLM, DeepSeek…) otherwise spend the whole
           // budget thinking and return empty content. Chat templates that do
