@@ -8,6 +8,13 @@ editing the checkpoint chat_template.jinja default instead (backup kept as
 chat_template.jinja.orig). max_kv_size is applied live via
 PATCH /v1/settings (POST/PUT return 405).
 
+Roadmap note (2026-08-27): prompts WILL exceed 5K tokens as the research loop
+deepens (iterative reading, longer synthesis contexts) — so quantized KV is
+deferred, not dismissed. When we cross that line: apply live with
+`PATCH /v1/settings {"kv_bits": 8}`, run a golden-prompt regression first
+(hybrid glm5_next carries conventional KV in only 11 of 45 layers, and
+kv-bits has a history of silent context corruption), and only then benchmark.
+
 # GLM-5.3-Flash on M3 Ultra 512GB — Headless Survival & Speed Playbook
 
 Context anchors: 2 tok/s decode today (clean-box parity is ~6.2 tok/s on the same chip — https://huggingface.co/Vontra/GLM-5.3-Flash-MLX-4bit-MTP), one `watchdog timeout: no checkins from watchdogd in 91 seconds` panic (compressor thrash starved watchdogd — man 8 watchdogd; https://eclecticlight.co/2025/02/19/how-to-deal-with-a-kernel-panic/), a 293GB-RSS hf downloader, and servers bloated to 117GB RSS. The deficit is software + memory pressure, not hardware: GLM-5 744B Q4 does 15.4 tok/s on this exact machine (https://x.com/awnihannun/status/2022007608811696158).
