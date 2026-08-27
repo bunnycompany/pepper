@@ -190,3 +190,11 @@ overlay their fixed glm5_next package in the gap after the v3 dev run
 completes (mid-run swaps would make the run internally inconsistent),
 re-measure speed, and give the holdout run correct numerics. Documented so
 the dev-vs-holdout runtime difference is on the record.
+
+**Empirical scheduling rule (2026-08-27 evening):** loading the 178GB model
+while a judge run is actively prefilling 100K-char prompts drives kernel
+memory pressure to critical in minutes — jetsam kills the big model (observed:
+compressor 137GB -> level 4 -> GLM server killed -> level 1 within 30s).
+The machine holds GLM + a 27B coder + desk + an *idle* judge comfortably;
+it does not hold GLM + an *active* judge run. Schedule accordingly: judging
+and the 178GB tenant get the box in turns, never together.
