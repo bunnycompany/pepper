@@ -539,12 +539,9 @@ class Brain {
           // budget thinking and return empty content. Chat templates that do
           // not use this flag simply ignore it.
           chat_template_kwargs: { enable_thinking: false },
-          // Thinking-model endpoints (gemma/qwen templates) burn the budget on
-          // hidden reasoning; unknown fields are ignored by other servers.
-          chat_template_kwargs: { enable_thinking: false },
           stream: false,
         }),
-        signal: AbortSignal.timeout(GEN_TIMEOUT_MS),
+        signal: AbortSignal.timeout(m.timeoutMs || GEN_TIMEOUT_MS),
       });
       if (!res.ok) return null;
       const data = await res.json();
@@ -645,6 +642,9 @@ class Brain {
       mode: 'local',
       localUrl: url,
       localModel: String(r?.model || '').trim(),
+      // A big model serving a role may honestly need minutes per call where
+      // the default tier gets 90s; configurable per role, capped at 10 min.
+      timeoutMs: Math.min(600_000, Number(r?.timeoutMs) || 300_000),
       role,
     };
   }
