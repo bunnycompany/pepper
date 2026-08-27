@@ -442,6 +442,9 @@ export async function runDeepResearch(question, { emit = () => {}, long = false 
     angles = anglesText.split('\n')
       .map((s) => s.trim().replace(/^[-*\d.)\s]+/, ''))
       .map((s) => s.replace(/^Tool:\s*/i, '').replace(/^search[_ ]/i, '').replace(/_/g, ' ').trim())
+      // Bigger planner models like to bold the query and append " — why this
+      // angle"; keep the query, drop the decoration.
+      .map((s) => s.replace(/\*\*/g, '').split(/\s+[—–]\s+/)[0].trim())
       .filter((s) => s && s.length <= 80 && !/[:{}[\]<>|]/.test(s) && /^[\w"'’ .,&-]+$/i.test(s))
       .slice(0, wantAngles);
   }

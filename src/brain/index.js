@@ -534,7 +534,12 @@ class Brain {
             { role: 'user', content: prompt },
           ],
           temperature: 0.7,
-          max_tokens: Math.min(2000, Math.max(64, Number(maxTokens) || 450)),
+          // Role tiers may point at always-thinking models (GLM-5.x) whose
+          // hidden reasoning spends completion tokens before the answer
+          // starts; without headroom the visible content comes back empty.
+          max_tokens: m.role
+            ? Math.min(3600, Math.max(64, Number(maxTokens) || 450) + 1600)
+            : Math.min(2000, Math.max(64, Number(maxTokens) || 450)),
           // Reasoning models (Qwen3, GLM, DeepSeek…) otherwise spend the whole
           // budget thinking and return empty content. Chat templates that do
           // not use this flag simply ignore it.
