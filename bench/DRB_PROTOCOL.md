@@ -44,8 +44,8 @@ and **the lower of the two is the number we publish**:
 
 | Judge | Model | Serves |
 |---|---|---|
-| A | `gemma-4-26B-A4B-it-QAT-MLX-4bit` | angel:8082 |
-| B | `Qwen3.6-35B-A3B` | angel:8083 |
+| A | `gemma-4-26B-A4B-it-QAT-MLX-4bit` | angel:8082 (angel account) |
+| B | `Qwen3.8-27B-MLX-4bit` | angel:8083 (anjan account's LM Studio library, served via mlx_lm on demand) |
 
 Constraint that follows: no model in Pepper's routed cast may share a family
 with a judge on the panel for a score to count. Her desk model is a
