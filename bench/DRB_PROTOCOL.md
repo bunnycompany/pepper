@@ -56,3 +56,14 @@ reported alongside as the family-adjacent reading.
 Judge-scale validation (rescoring the bundled Claude-3.7-Sonnet reports)
 is repeated per judge, so a judge that runs hot or cold is visible rather
 than baked into a claim.
+
+## Instrument defect on record (2026-08-27)
+
+Judge A (gemma-4-26B) assigns near-zero scores (0.03-0.06) to dev tasks 55
+and 57 — both business/finance prompts with the longest references — on
+reports that read cleanly end-to-end and that judge B (Qwen3.8-27B) scores
+in the normal band (0.222 / 0.340; 6-10x higher). Reproduced across two
+independent judge A runs, so it is deterministic. Consequence: single-judge
+numbers on this split understate scores by roughly 0.02 overall; the
+two-family panel is not optional. Both tasks stay in the split — the defect
+is documented rather than the data trimmed.
