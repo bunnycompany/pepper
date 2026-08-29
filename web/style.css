@@ -1027,3 +1027,8 @@ body.mode-broadcast .gate-run-own { display: inline-block; }
 .ns-msg { margin: 4px 0 0; font-size: 14.5px; font-weight: 600; line-height: 1.45; }
 
 .ns-sub { margin: 0; font-size: 12.5px; color: var(--dim); }
+
+
+/* ---- embed mode (?embed=1): just the show ---- */
+.embed #join-gate, .embed #status-row, .embed #panel, .embed #panel-scrim,
+.embed #skip-btn, .embed #mute-chip, .embed #panel-toggle { display: none !important; }

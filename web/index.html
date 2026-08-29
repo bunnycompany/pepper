@@ -17,6 +17,13 @@
   </script>
 </head>
 <body>
+  <script>
+    // ?embed=1: chrome-less scene for embedding on the landing pages —
+    // the show without the controls, and never any audio (no join).
+    if (new URLSearchParams(location.search).has('embed')) {
+      document.documentElement.classList.add('embed');
+    }
+  </script>
   <canvas id="scene"></canvas>
 
   <div id="bug">
