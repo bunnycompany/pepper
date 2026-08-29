@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "pepper",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["bin/pepper.js", "start"],
-      "port": 4747
+      "name": "hero-capture",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8931", "--directory", "/private/tmp/claude-501/-Users-dalnk-pepper/900542c0-0911-4571-8ce8-adc19a86698c/scratchpad/pepper-site"],
+      "port": 8931
     }
   ]
 }

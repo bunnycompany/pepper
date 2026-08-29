@@ -975,7 +975,7 @@ async function loadVRMAvatar() {
       for (const m of mats) if (m) m.toneMapped = false;
     }
   });
-  const key = new THREE.DirectionalLight(0xffffff, Math.PI);
+  const key = new THREE.DirectionalLight(0xffeeda, 2.0);
   key.position.set(1.3, S.headY + 0.8, 2.4);
   key.target.position.set(0, S.headY - 0.3, 0);
   key.layers.set(1);
