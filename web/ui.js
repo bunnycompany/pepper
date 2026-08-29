@@ -381,7 +381,9 @@ async function speakLine(text, token = null) {
   const clean = String(text).trim();
   if (!clean) return;
   typeOn(clean);
-  const voiced = state.voiceOn && 'speechSynthesis' in window;
+  // Embeds are always silent: captions and lip-sync run, audio never does.
+  const embedded = document.documentElement.classList.contains('embed');
+  const voiced = !embedded && state.voiceOn && 'speechSynthesis' in window;
   N.setTalking(true);
   try {
     if (voiced) await utter(clean);
@@ -514,6 +516,7 @@ function playAudioElement(url, text) {
       resolve(ok);
     };
     try {
+      if (document.documentElement.classList.contains('embed')) { finish(false); return; }
       el = new Audio();
       currentAudio = { el, finish };
       el.preload = 'auto';
