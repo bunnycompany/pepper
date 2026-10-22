@@ -1,6 +1,8 @@
 # @pepper_research launch thread (draft)
 
-Post only after the MoltBench gate passes; fill in the two {SCORE} figures.
+Post only after the MoltBench gate passes. The figures in 4/ come from
+bench/README.md (leaderboard v2, 2026-08-14); re-check them against the current
+table before posting.
 
 ---
 

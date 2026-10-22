@@ -16,10 +16,16 @@ if [ "$major" -lt 18 ]; then
 fi
 
 echo "Installing @pepperchan/pepper…"
-npm install -g @pepperchan/pepper
+if ! npm install -g @pepperchan/pepper; then
+  echo ""
+  echo "npm could not install globally — on a system-wide Node that is usually EACCES."
+  echo "Fix npm's global prefix (https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally)"
+  echo "or run:  sudo npm install -g @pepperchan/pepper"
+  exit 1
+fi
 
 echo ""
-echo "🌶 Pepper is in. Put her on the desk:"
+echo "🌶 Pepper is in — $(pepper version 2>/dev/null || echo 'open a new terminal for the pepper command'). Put her on the desk:"
 echo ""
 echo "    pepper start"
 echo ""

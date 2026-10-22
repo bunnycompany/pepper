@@ -4,3 +4,5 @@ node_modules/
 .dev-home/
 pepper-site/
 .claude/settings.local.json
+__pycache__/
+*.pyc

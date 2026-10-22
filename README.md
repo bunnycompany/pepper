@@ -145,12 +145,12 @@ That specialist is the first released model:
 wins) and Qwen2.5-7B (11/12) on MoltBench at 88.6% grounding, +23 points over
 its own untuned base; scores and protocol in [bench/](bench/).
 
-On the roadmap alongside it: her real voice. Pepper ships **three designed
-voice identities** — `bright-anchor`, `calm-pro`, and `vtuber-spark`, golden
+Alongside it, her real voice. Pepper ships **three designed voice
+identities** — `bright-anchor`, `calm-pro`, and `vtuber-spark`, golden
 reference clips in [`voices/`](voices), synthesized from text descriptions so
-no human was cloned — which a local `mlx-audio` TTS tier will stream in place
-of browser TTS on machines that can carry it. Provenance, compliance, and the
-full plan: [docs/VOICE.md](docs/VOICE.md).
+no human was cloned — which the local `mlx-audio` TTS tier renders in place of
+browser TTS once you run `pepper voice install` (Apple Silicon). Provenance,
+compliance, and the full plan: [docs/VOICE.md](docs/VOICE.md).
 
 ## Give her a face
 
