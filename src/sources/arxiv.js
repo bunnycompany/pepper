@@ -49,7 +49,10 @@ async function viaResearchIndex(query) {
 
 let lastArxivCall = 0;
 let arxivCooldownUntil = 0;
-const sleep = (ms) => new Promise((r) => { setTimeout(r, ms).unref?.(); });
+// Deliberately NOT unref'd: when Firecrawl 429s on every beat, this timer can
+// be the only thing pending in a one-shot `pepper now`, and an unref'd timer
+// lets Node exit 0 mid-sweep with no bulletin.
+const sleep = (ms) => new Promise((r) => { setTimeout(r, ms); });
 
 // → Item[] on a successful fetch (possibly empty), null on failure or while
 // cooling down from one.

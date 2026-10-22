@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 process.env.PEPPER_HOME = mkdtempSync(join(tmpdir(), 'pepper-fixes-'));
 
@@ -70,4 +71,62 @@ test('decodeEntities ignores Object.prototype member names', () => {
   const [item] = parseFeed(xml);
   assert.ok(!item.title.includes('native code'), item.title);
   assert.ok(item.title.includes('&toString;'), item.title);
+});
+
+// ---- operability fixes (found by running her headless on Linux) ----
+
+// Google News sometimes fills the <source> tag with the publisher's URL rather
+// than its name; read aloud that was "per https://tech-insider.org/".
+test('news lens reads a URL-shaped publisher as its hostname', async () => {
+  const { fetchTopic } = await import('../src/sources/news.js');
+  const rss = `<?xml version="1.0"?><rss version="2.0"><channel><title>x</title>
+<item><title>Vercel vs Netlify vs Cloudflare Pages - https://tech-insider.org/</title>
+  <link>https://news.google.com/rss/articles/one</link>
+  <source url="https://tech-insider.org">https://tech-insider.org/</source></item>
+<item><title>Premiums climb again - TechCrunch</title>
+  <link>https://news.google.com/rss/articles/two</link>
+  <source url="https://techcrunch.com">TechCrunch</source></item>
+<item><title>No source tag here - www.example.co.uk</title>
+  <link>https://news.google.com/rss/articles/three</link></item>
+</channel></rss>`;
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => new Response(rss, { status: 200, headers: { 'content-type': 'application/rss+xml' } });
+  try {
+    const items = await fetchTopic('cloudflare pages');
+    assert.equal(items.length, 3);
+    assert.equal(items[0].source, 'tech-insider.org');
+    assert.equal(items[0].title, 'Vercel vs Netlify vs Cloudflare Pages');
+    assert.equal(items[1].source, 'TechCrunch');
+    assert.equal(items[2].source, 'www.example.co.uk');
+  } finally {
+    globalThis.fetch = real;
+  }
+});
+
+// When Firecrawl rate-limits, the arXiv fallback throttles itself with a
+// sleep. If that timer is unref'd and nothing else is pending, a one-shot
+// `pepper now` exits 0 mid-sweep with no bulletin. The sleep must hold the
+// event loop open, so this runs in a child process where nothing else does.
+test('arXiv throttle keeps a one-shot process alive until the fallback answers', () => {
+  const arxivUrl = new URL('../src/sources/arxiv.js', import.meta.url).href;
+  const script = `
+    const atom = '<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Paper</title>'
+      + '<id>http://arxiv.org/abs/1.1</id><link href="http://arxiv.org/abs/1.1"/>'
+      + '<published>2026-10-20T00:00:00Z</published><summary>s</summary></entry></feed>';
+    globalThis.fetch = async (url) => {
+      const u = String(url);
+      if (u.startsWith('https://api.firecrawl.dev/')) return new Response('rate limited', { status: 429 });
+      if (u.startsWith('https://export.arxiv.org/')) return new Response(atom, { status: 200 });
+      return new Response('', { status: 404 });
+    };
+    const { fetchTopic } = await import(${JSON.stringify(arxivUrl)});
+    const a = await fetchTopic('first query');
+    const b = await fetchTopic('second query'); // inside the 3.5s throttle window
+    console.log(Array.isArray(a) && Array.isArray(b) ? 'BOTH ANSWERED' : 'BAD ' + a + ' ' + b);
+  `;
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', script],
+    { encoding: 'utf8', timeout: 30000 });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /BOTH ANSWERED/,
+    `child exited before the throttled fallback resolved\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
 });

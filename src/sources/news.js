@@ -3,6 +3,19 @@ import { parseFeed } from './rss.js';
 
 const MAX_ITEMS = 12;
 
+// Google News occasionally fills <source> (or the title suffix) with the
+// publisher's URL instead of its name; read aloud that is "per
+// https://tech-insider.org/". Use the hostname instead.
+function publisherName(s) {
+  const t = String(s || '').trim();
+  if (!/^https?:\/\//i.test(t)) return t;
+  try {
+    return new URL(t).hostname.replace(/^www\./, '') || t;
+  } catch {
+    return t;
+  }
+}
+
 // Google News titles look like "Headline - Publisher". When the feed's
 // <source> tag is present, strip a matching trailing suffix from the title;
 // when it's absent, split the trailing " - Publisher" into `source`.
@@ -11,13 +24,13 @@ function splitTitle(rawTitle, tagSource) {
   if (tagSource) {
     const suffix = ' - ' + tagSource;
     if (title.toLowerCase().endsWith(suffix.toLowerCase())) {
-      return { title: title.slice(0, -suffix.length).trim(), source: tagSource };
+      return { title: title.slice(0, -suffix.length).trim(), source: publisherName(tagSource) };
     }
-    return { title, source: tagSource };
+    return { title, source: publisherName(tagSource) };
   }
   const i = title.lastIndexOf(' - ');
   if (i > 0 && title.length - i - 3 > 0 && title.length - i - 3 <= 48) {
-    return { title: title.slice(0, i).trim(), source: title.slice(i + 3).trim() };
+    return { title: title.slice(0, i).trim(), source: publisherName(title.slice(i + 3)) };
   }
   return { title, source: '' };
 }

@@ -291,11 +291,15 @@ async function cmdStart() {
   // Fresh desk: bring the human to her, don't make them find the URL.
   if (flags.open || (!topics.length && !flags['no-open'])) openUrl(url);
 
-  process.on('SIGINT', () => {
+  // ctrl-c, and SIGTERM from systemd / `timeout` / docker stop: same sign-off,
+  // so run.json is removed and SSE clients are closed either way.
+  const offAir = () => {
     console.log('\n   ' + c.dim('that\'s the sweep — Pepper is off the air. MNN.'));
     try { srv.stop(); } catch {}
     process.exit(0);
-  });
+  };
+  process.on('SIGINT', offAir);
+  process.on('SIGTERM', offAir);
 }
 
 async function shortStatus() {
