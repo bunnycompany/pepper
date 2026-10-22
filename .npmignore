@@ -1,9 +1,0 @@
-# Trim the published tarball: `files` in package.json picks the dirs, this
-# drops what users do not need from inside them.
-__pycache__/
-*.pyc
-docs/LAUNCH.md
-docs/launch/
-docs/media/
-.DS_Store
-*.log
